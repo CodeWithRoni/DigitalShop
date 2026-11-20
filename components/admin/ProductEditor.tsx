@@ -7,6 +7,7 @@ import type { Category, Product, ProductPayload } from '@/lib/types';
 import { saveProductFull } from '@/app/admin/actions';
 import ProductIcon from '@/components/ProductIcon';
 import Icon from './Icon';
+import ImageUpload from './ImageUpload';
 
 const DELIVERY_PRESETS = [
   { label: 'Email / Account info', hint: 'Email for account delivery' },
@@ -18,7 +19,7 @@ const DELIVERY_PRESETS = [
 ];
 const PACKAGE_IDEAS = ['1 Month', '3 Months', '6 Months', '12 Months', 'Lifetime'];
 
-type Pkg = { key: string; id?: number; name: string; price: string; is_active: boolean };
+type Pkg = { key: string; id?: number; name: string; price: string; is_active: boolean; stock?: number | null };
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 let seq = 0;
 const newKey = () => `n${++seq}`;
@@ -43,7 +44,7 @@ export default function ProductEditor({ product, categories }: { product?: Produ
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [pkgs, setPkgs] = useState<Pkg[]>(() =>
     p?.packages?.length
-      ? p.packages.map((k) => ({ key: `e${k.id}`, id: k.id, name: k.name, price: String(k.price), is_active: k.is_active }))
+      ? p.packages.map((k) => ({ key: `e${k.id}`, id: k.id, name: k.name, price: String(k.price), is_active: k.is_active, stock: k.stock_managed ? k.stock_available ?? 0 : null }))
       : [{ key: newKey(), name: '1 Month', price: '', is_active: true }],
   );
   const [dirty, setDirty] = useState(false);
@@ -119,8 +120,9 @@ export default function ProductEditor({ product, categories }: { product?: Produ
                 <ProductIcon key={image} src={image || null} name={name || '?'} size={60} />
               </div>
               <div className="min-w-0 flex-1 space-y-3">
+                <ImageUpload onUploaded={setImage} />
                 <div>
-                  <label className="label">Get logo from website</label>
+                  <label className="label">…or get the logo from a website</label>
                   <div className="flex gap-2">
                     <input className="input" value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="netflix.com"
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyLogo(); } }} />
@@ -156,9 +158,14 @@ export default function ProductEditor({ product, categories }: { product?: Produ
                     <input className="input !py-2 !pl-7 text-right font-semibold" inputMode="decimal" value={k.price}
                       onChange={(e) => updPkg(k.key, { price: e.target.value.replace(/[^\d.]/g, '') })} placeholder="0" />
                   </div>
-                  <div className="col-start-2 sm:col-start-auto">
+                  <div className="col-start-2 flex items-center gap-3 sm:col-start-auto">
                     <Switch on={k.is_active} onChange={(v) => updPkg(k.key, { is_active: v })} label={k.is_active ? 'On' : 'Off'} />
                   </div>
+                  {k.id && (
+                    <a href={`/admin/stock?package=${k.id}`} target="_blank" className="col-span-full -mt-1 pl-9 text-[11px] text-zinc-500 hover:text-brand-light">
+                      {k.stock == null ? '🔑 Manual delivery — add stock for instant delivery' : `⚡ Auto-delivery · ${k.stock} in stock`}
+                    </a>
+                  )}
                 </div>
               ))}
               {!pkgs.length && <p className="rounded-xl border border-dashed border-white/10 p-4 text-center text-sm text-zinc-500">No packages yet — the product will show “Coming soon”.</p>}

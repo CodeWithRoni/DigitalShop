@@ -1,6 +1,6 @@
-import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
-import { ADMIN_COOKIE, verifySessionToken } from '@/lib/auth';
+import { getAdmin } from '@/lib/admin';
+import { logActivity } from '@/lib/activity';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,9 @@ function cell(v: unknown) {
 }
 
 export async function GET(req: Request) {
-  if (!(await verifySessionToken((await cookies()).get(ADMIN_COOKIE)?.value))) return new Response('Unauthorized', { status: 401 });
+  const me = await getAdmin();
+  if (!me) return new Response('Unauthorized', { status: 401 });
+  await logActivity(me.email, 'Exported orders CSV', 'order', null, new URL(req.url).search || 'all');
   const u = new URL(req.url).searchParams;
   const date = (k: string) => (/^\d{4}-\d{2}-\d{2}$/.test(u.get(k) || '') ? u.get(k)! : undefined);
   const { orders } = await db.listOrdersPage({

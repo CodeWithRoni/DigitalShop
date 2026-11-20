@@ -40,12 +40,16 @@ export async function verifySessionToken(token?: string | null): Promise<string 
   if (!exp || Number(exp) < Date.now() / 1000) return null;
   return email;
 }
-export async function checkCredentials(email: string, password: string) {
-  const E = process.env.ADMIN_EMAIL || (process.env.NODE_ENV !== 'production' ? 'admin@demo.com' : '');
+/** The owner account from env (ADMIN_EMAIL / ADMIN_PASSWORD). Dev falls back to admin@demo.com / admin123. */
+export function envOwnerEmail() {
+  return (process.env.ADMIN_EMAIL || (process.env.NODE_ENV !== 'production' ? 'admin@demo.com' : '')).trim().toLowerCase();
+}
+export async function checkEnvOwner(email: string, password: string) {
+  const E = envOwnerEmail();
   const P = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV !== 'production' ? 'admin123' : '');
   if (!E || !P) return false;
   const a = await hmac(email.trim().toLowerCase() + '\0' + password);
-  const b = await hmac(E.toLowerCase() + '\0' + P);
+  const b = await hmac(E + '\0' + P);
   return safeEqual(a, b);
 }
 export const cookieOptions = {

@@ -3,10 +3,13 @@ import { db } from '@/lib/db';
 import { EmptyState, PageHeader } from '@/components/admin/ui';
 import Icon from '@/components/admin/Icon';
 import { taka } from '@/lib/utils';
+import { requireAdmin } from '@/lib/admin';
 
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Dhaka' });
 
 export default async function Customers(props: { searchParams: Promise<{ q?: string }> }) {
+  const me = await requireAdmin();
+  const owner = me.role === 'owner';
   const { q = '' } = await props.searchParams;
   const list = await db.listCustomers(q);
   const spent = list.reduce((a, c) => a + c.spent, 0);
@@ -17,7 +20,7 @@ export default async function Customers(props: { searchParams: Promise<{ q?: str
     <div>
       <PageHeader title="Customers" subtitle="Everyone who placed an order, grouped by phone number" />
       <div className="mb-5 grid grid-cols-3 gap-3">
-        {[['Customers', String(list.length)], ['Repeat buyers', `${repeat}${paying ? ` · ${Math.round((repeat / paying) * 100)}%` : ''}`], ['Lifetime revenue', taka(spent)]].map(([l, v]) => (
+        {[['Customers', String(list.length)], ['Repeat buyers', `${repeat}${paying ? ` · ${Math.round((repeat / paying) * 100)}%` : ''}`], ['Lifetime revenue', owner ? taka(spent) : '—']].map(([l, v]) => (
           <div key={l} className="card p-4"><div className="text-[11px] uppercase tracking-wide text-zinc-500">{l}</div><div className="mt-1 font-display text-lg font-extrabold sm:text-xl">{v}</div></div>
         ))}
       </div>
@@ -44,7 +47,7 @@ export default async function Customers(props: { searchParams: Promise<{ q?: str
                     </div>
                   </td>
                   <td className="px-4 py-3"><span className="font-semibold">{c.paidOrders}</span><span className="text-zinc-500"> paid / {c.orders}</span></td>
-                  <td className="px-4 py-3 text-right font-semibold">{taka(c.spent)}</td>
+                  <td className="px-4 py-3 text-right font-semibold">{owner ? taka(c.spent) : "—"}</td>
                   <td className="px-4 py-3 text-xs text-zinc-400">{fmt(c.firstOrder)}</td>
                   <td className="px-4 py-3 text-xs text-zinc-400">{fmt(c.lastOrder)}</td>
                   <td className="px-4 py-3 text-right">

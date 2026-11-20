@@ -1,3 +1,4 @@
+import { requireOwner } from '@/lib/admin';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
@@ -6,6 +7,7 @@ import ConfirmButton from '@/components/ConfirmButton';
 import { deleteProduct } from '../../../actions';
 
 export default async function EditProduct(props: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> }) {
+  await requireOwner();
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const [p, cats] = await Promise.all([db.getProductById(Number(params.id)), db.listCategories()]);
   if (!p) notFound();

@@ -3,7 +3,9 @@ import { db } from '@/lib/db';
 import ProductBrowser from '@/components/ProductBrowser';
 import ProductIcon from '@/components/ProductIcon';
 import Reveal from '@/components/Reveal';
-import { SHOP_NAME, minPrice, taka } from '@/lib/utils';
+import { minPrice, taka } from '@/lib/utils';
+import { getSettings } from '@/lib/settings';
+import { ratingsByProduct } from '@/lib/reviews';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +24,7 @@ const FEATURES = [
 ];
 
 export default async function Home() {
-  const [categories, products] = await Promise.all([db.listCategories(), db.listProducts()]);
+  const [categories, products, settings, ratings] = await Promise.all([db.listCategories(), db.listProducts(), getSettings(), ratingsByProduct()]);
   const featured = products.filter((p) => p.is_featured);
   const orbit = (featured.length >= 4 ? featured : products).slice(0, 6);
   const spotlight = orbit[0];
@@ -132,7 +134,7 @@ export default async function Home() {
           <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Pick what you need</h2>
           <p className="mt-3 text-zinc-400">Choose a product to see all packages and prices.</p>
         </Reveal>
-        <ProductBrowser categories={categories} products={products} />
+        <ProductBrowser categories={categories} products={products} ratings={Object.fromEntries(ratings)} />
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
@@ -162,7 +164,7 @@ export default async function Home() {
       {/* ===== FEATURES ===== */}
       <section className="container-x py-16">
         <Reveal className="mb-10 text-center">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight">Why {SHOP_NAME}?</h2>
+          <h2 className="font-display text-3xl font-extrabold tracking-tight">Why {settings.shop_name}?</h2>
         </Reveal>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(([icon, t, d], i) => (

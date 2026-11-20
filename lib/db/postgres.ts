@@ -1,37 +1,17 @@
 // PostgreSQL storage driver — works with Neon (https://neon.tech) or any Postgres.
 // Set DATABASE_URL to your Neon connection string (use the "Pooled connection" one).
-import { Pool, types } from 'pg';
+import { q, one } from './pg';
 import type { Category, Order, OrderItem, Package, Product } from '@/lib/types';
 import type { Analytics, Customer, DB, OrderFilter, PeriodTotals } from './types';
 import { lastDays } from './analytics';
 
-// Return NUMERIC as JS number (prices fit easily) and BIGINT ids as numbers.
-types.setTypeParser(1700, (v) => Number(v));
-types.setTypeParser(20, (v) => Number(v));
-
-const g = globalThis as unknown as { __pgPool?: Pool };
-function pool() {
-  if (!g.__pgPool) {
-    g.__pgPool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: 5,
-      idleTimeoutMillis: 10_000,
-      connectionTimeoutMillis: 10_000,
-    });
-  }
-  return g.__pgPool;
-}
-async function q<T>(text: string, params: unknown[] = []): Promise<T[]> {
-  const r = await pool().query(text, params);
-  return r.rows as T[];
-}
-async function one<T>(text: string, params: unknown[] = []): Promise<T | null> {
-  return (await q<T>(text, params))[0] ?? null;
-}
-
 const PRODUCT_SELECT = (pkgFilter: string) => `
   select p.*,
-    coalesce((select json_agg(k order by k.sort_order, k.id) from packages k where k.product_id = p.id ${pkgFilter}), '[]') as packages,
+    coalesce((select json_agg(k order by k.sort_order, k.id) from (
+      select k.*,
+        exists(select 1 from stock_items s where s.package_id = k.id) as stock_managed,
+        (select count(*)::int from stock_items s where s.package_id = k.id and s.status = 'available') as stock_available
+      from packages k where k.product_id = p.id ${pkgFilter}) k), '[]') as packages,
     (select row_to_json(c) from categories c where c.id = p.category_id) as categories
   from products p`;
 const ORDER_SELECT = `
@@ -54,7 +34,7 @@ function setClause(obj: Record<string, unknown>, allowed: string[], start = 1) {
   return { sql: keys.map((k, i) => `${k} = $${i + start}`).join(', '), values: keys.map((k) => obj[k]), keys };
 }
 
-const ORDER_COLS = ['customer_name', 'customer_phone', 'customer_email', 'note', 'total', 'status', 'payment_status', 'payment_method', 'tran_id', 'val_id', 'bank_tran_id', 'paid_at', 'delivery_message', 'admin_note'];
+const ORDER_COLS = ['customer_name', 'customer_phone', 'customer_email', 'note', 'total', 'status', 'payment_status', 'payment_method', 'tran_id', 'val_id', 'bank_tran_id', 'paid_at', 'delivery_message', 'admin_note', 'auto_delivered'];
 const PRODUCT_COLS = ['category_id', 'slug', 'name', 'short_description', 'description', 'image_url', 'delivery_label', 'delivery_hint', 'is_active', 'is_featured', 'sort_order'];
 const PACKAGE_COLS = ['product_id', 'name', 'price', 'is_active', 'sort_order'];
 const CATEGORY_COLS = ['slug', 'name', 'description', 'sort_order'];
@@ -112,8 +92,8 @@ export const postgresDb: DB = {
     // One statement = atomic: order and its items are saved together or not at all.
     const row = await one<Order>(
       `with o as (
-         insert into orders (code, tran_id, customer_name, customer_phone, customer_email, note, total, status, payment_status)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning *
+         insert into orders (code, tran_id, customer_name, customer_phone, customer_email, note, total, status, payment_status, subtotal, discount, coupon_code)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$11,$12,$13) returning *
        ), i as (
          insert into order_items (order_id, product_id, package_id, product_name, package_name, unit_price, quantity, delivery_info)
          select o.id, x.product_id, x.package_id, x.product_name, x.package_name, x.unit_price, x.quantity, x.delivery_info
@@ -122,7 +102,7 @@ export const postgresDb: DB = {
        )
        select o.*, (select json_agg(i order by i.id) from i) as order_items from o`,
       [order.code, order.tran_id, order.customer_name, order.customer_phone, order.customer_email, order.note,
-        order.total, order.status, order.payment_status, JSON.stringify(items)],
+        order.total, order.status, order.payment_status, JSON.stringify(items), order.subtotal, order.discount || 0, order.coupon_code],
     );
     return fixOrder(row!);
   },

@@ -7,14 +7,35 @@ import CopyButton from '@/components/admin/CopyButton';
 import Icon from '@/components/admin/Icon';
 import { Panel } from '@/components/admin/ui';
 import { SITE_URL, taka } from '@/lib/utils';
+import { requireAdmin } from '@/lib/admin';
+import { listActivity } from '@/lib/activity';
+import { listRefunds } from '@/lib/refunds';
+import { fillTemplate, listTemplates } from '@/lib/templates';
+import { getSettings } from '@/lib/settings';
+import { addRefund } from '../../../feature-actions';
+import DeliveryMessageField from '@/components/admin/DeliveryMessageField';
+import { Flash } from '@/components/admin/ui';
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
 
-export default async function OrderDetail(props: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> }) {
+export default async function OrderDetail(props: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; refunded?: string; refundError?: string }> }) {
+  const me = await requireAdmin();
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const o = await db.getOrderById(Number(params.id));
   if (!o) notFound();
-  const history = await db.listOrdersPage({ phone: o.customer_phone, limit: 1 });
+  const [history, refunds, activity, templates, settings] = await Promise.all([
+    db.listOrdersPage({ phone: o.customer_phone, limit: 1 }),
+    listRefunds(o.id),
+    listActivity({ entity: 'order', entityId: String(o.id), limit: 30 }),
+    listTemplates(),
+    getSettings(),
+  ]);
+  const productIds = new Set((o.order_items || []).map((i) => i.product_id));
+  const tpl = [...templates].sort((a, b) => Number(productIds.has(b.product_id)) - Number(productIds.has(a.product_id)))
+    .filter((t) => !t.product_id || productIds.has(t.product_id))
+    .map((t) => ({ name: t.product_name ? `${t.name} (${t.product_name})` : t.name, text: fillTemplate(t.body, o, settings.shop_name) }));
+  const refunded = refunds.reduce((a, r) => a + Number(r.amount), 0);
+  const refundable = Math.max(0, Math.round((Number(o.total) - refunded) * 100) / 100);
   const paid = o.payment_status === 'paid';
 
   const waBase = `https://wa.me/88${o.customer_phone}?text=`;
@@ -39,6 +60,7 @@ export default async function OrderDetail(props: { params: Promise<{ id: string 
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-mono text-2xl font-bold">{o.code}</h1><CopyButton text={o.code} />
           <StatusBadge s={o.payment_status} /><StatusBadge s={o.status} />
+          {o.auto_delivered && <span className="badge border-accent/30 bg-accent/10 text-accent">⚡ Auto-delivered</span>}
         </div>
         <div className="flex flex-wrap gap-2">
           {paid && o.status === 'pending' && <QuickStatus id={o.id} status="processing" label="Start processing" />}
@@ -46,7 +68,7 @@ export default async function OrderDetail(props: { params: Promise<{ id: string 
           <a href={waBase + encodeURIComponent(o.status === 'delivered' ? deliveryText : `Hi ${o.customer_name}, about your order ${o.code}: `)} target="_blank" rel="noreferrer" className="btn-ghost !py-2"><Icon name="whatsapp" size={16} className="text-green-400" />WhatsApp</a>
         </div>
       </div>
-      {searchParams.saved && <div className="mb-5 flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200"><Icon name="check" size={16} />Saved</div>}
+      <Flash ok={searchParams.saved ? 'Saved' : searchParams.refunded ? 'Refund recorded' : null} error={searchParams.refundError} />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
@@ -64,7 +86,14 @@ export default async function OrderDetail(props: { params: Promise<{ id: string 
                 </li>
               ))}
             </ul>
-            <div className="flex justify-between border-t border-white/[0.06] bg-white/[0.02] px-5 py-4 font-bold"><span>Total</span><span className="text-gradient">{taka(o.total)}</span></div>
+            <div className="space-y-1.5 border-t border-white/[0.06] bg-white/[0.02] px-5 py-4 text-sm">
+              {Number(o.discount) > 0 && <>
+                <div className="flex justify-between text-zinc-400"><span>Subtotal</span><span>{taka(o.subtotal ?? Number(o.total) + Number(o.discount))}</span></div>
+                <div className="flex justify-between text-green-300"><span>Coupon <span className="font-mono">{o.coupon_code}</span></span><span>− {taka(o.discount)}</span></div>
+              </>}
+              <div className="flex justify-between text-base font-bold"><span>Total</span><span className="text-gradient">{taka(o.total)}</span></div>
+              {refunded > 0 && <div className="flex justify-between text-purple-300"><span>Refunded</span><span>− {taka(refunded)}</span></div>}
+            </div>
           </Panel>
 
           <Panel title="Deliver & update">
@@ -80,8 +109,7 @@ export default async function OrderDetail(props: { params: Promise<{ id: string 
                     {['unpaid', 'paid', 'failed', 'refunded'].map((s) => <option key={s} value={s}>{s}</option>)}
                   </select></div>
               </div>
-              <div><label className="label">Delivery message — the customer sees this on their order page</label>
-                <textarea name="delivery_message" defaultValue={o.delivery_message || ''} rows={5} className="input font-mono" placeholder={'Email: xxx@gmail.com\nPassword: ********\nProfile: 2  ·  PIN: 1234'} /></div>
+              <DeliveryMessageField defaultValue={o.delivery_message || ''} templates={tpl} />
               <div><label className="label">Internal note — only admins see this</label>
                 <textarea name="admin_note" defaultValue={o.admin_note || ''} rows={2} className="input" /></div>
               <div className="flex flex-wrap items-center gap-3">
@@ -90,6 +118,31 @@ export default async function OrderDetail(props: { params: Promise<{ id: string 
               </div>
             </form>
           </Panel>
+
+          {me.role === 'owner' && (paid || refunds.length > 0 || o.payment_status === 'refunded') && (
+            <Panel title="Refunds" action={<span className="text-xs text-zinc-500">{refunds.length ? `${taka(refunded)} refunded` : 'None yet'}</span>}>
+              {refunds.length > 0 && (
+                <ul className="divide-y divide-white/[0.05]">
+                  {refunds.map((r) => (
+                    <li key={r.id} className="flex justify-between gap-4 px-5 py-3 text-sm">
+                      <span><span className="font-semibold text-purple-300">{taka(r.amount)}</span> <span className="text-zinc-400">via {r.method || '—'}</span>
+                        <span className="block text-xs text-zinc-500">{r.reason || 'No reason'} · by {r.created_by} · {fmt(r.created_at)}</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {refundable > 0 && (
+                <form action={addRefund} className="grid gap-3 border-t border-white/[0.06] p-5 sm:grid-cols-[120px_150px_1fr_auto] sm:items-end">
+                  <input type="hidden" name="order_id" value={o.id} />
+                  <div><label className="label">Amount ৳</label><input name="amount" type="number" step="0.01" min="0.01" max={refundable} defaultValue={refundable} required className="input" /></div>
+                  <div><label className="label">Sent via</label><select name="method" className="input">{['bKash', 'Nagad', 'Rocket', 'Bank', 'SSLCommerz', 'Other'].map((m) => <option key={m}>{m}</option>)}</select></div>
+                  <div><label className="label">Reason</label><input name="reason" className="input" placeholder="e.g. account not working" maxLength={300} /></div>
+                  <button className="btn-ghost"><Icon name="refund" size={15} />Record</button>
+                  <p className="text-xs text-zinc-500 sm:col-span-4">This only records the refund — send the money yourself first. A full refund marks the order “refunded”.</p>
+                </form>
+              )}
+            </Panel>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -132,7 +185,17 @@ export default async function OrderDetail(props: { params: Promise<{ id: string 
               <Row k="Updated" v={fmt(o.updated_at)} />
             </div>
           </Panel>
-          {o.admin_note && <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm text-yellow-100"><div className="mb-1 text-xs font-semibold uppercase text-yellow-400">Internal note</div>{o.admin_note}</div>}
+          {activity.length > 0 && (
+            <Panel title="History">
+              <ol className="max-h-72 space-y-3 overflow-y-auto p-5 text-xs">
+                {activity.map((a) => (
+                  <li key={a.id}><span className="text-zinc-300">{a.details?.replace(`${o.code}: `, '') || a.action}</span>
+                    <span className="block text-zinc-500">{a.actor} · {fmt(a.created_at)}</span></li>
+                ))}
+              </ol>
+            </Panel>
+          )}
+          {o.admin_note && <div className="whitespace-pre-line rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm text-yellow-100"><div className="mb-1 text-xs font-semibold uppercase text-yellow-400">Internal note</div>{o.admin_note}</div>}
         </div>
       </div>
     </div>

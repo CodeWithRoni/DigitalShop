@@ -1,8 +1,10 @@
+import { requireOwner } from '@/lib/admin';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import ProductEditor from '@/components/admin/ProductEditor';
 
 export default async function NewProduct() {
+  await requireOwner();
   const cats = await db.listCategories();
   return (
     <div className="mx-auto max-w-6xl">

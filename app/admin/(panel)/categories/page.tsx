@@ -1,9 +1,11 @@
+import { requireOwner } from '@/lib/admin';
 import { db } from '@/lib/db';
 import { deleteCategory, saveCategory } from '../../actions';
 import ConfirmButton from '@/components/ConfirmButton';
 import { PageHeader } from '@/components/admin/ui';
 
 export default async function Categories(props: { searchParams: Promise<{ error?: string }> }) {
+  await requireOwner();
   const searchParams = await props.searchParams;
   const [cats, products] = await Promise.all([db.listCategories(), db.listProducts({ includeInactive: true })]);
   return (

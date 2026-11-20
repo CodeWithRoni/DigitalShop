@@ -1,6 +1,7 @@
-import { SHOP_NAME } from '@/lib/utils';
+import { getSettings } from '@/lib/settings';
 export const metadata = { title: 'Terms & Conditions' };
-export default function Terms() {
+export default async function Terms() {
+  const { shop_name: SHOP_NAME } = await getSettings();
   return (
     <div className="container-x max-w-3xl py-12">
       <h1 className="mb-6 text-3xl font-bold">Terms &amp; Conditions</h1>

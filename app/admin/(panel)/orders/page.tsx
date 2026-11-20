@@ -1,14 +1,16 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import OrdersTable from '@/components/OrdersTable';
-import { PageHeader } from '@/components/admin/ui';
+import { Flash, PageHeader } from '@/components/admin/ui';
+import { requireAdmin } from '@/lib/admin';
 import Icon from '@/components/admin/Icon';
 
 const TABS = [['', 'All'], ['pending', 'Pending'], ['processing', 'Processing'], ['delivered', 'Delivered'], ['cancelled', 'Cancelled'], ['refunded', 'Refunded']] as const;
 const PER_PAGE = 25;
-type SP = { status?: string; payment?: string; q?: string; from?: string; to?: string; phone?: string; page?: string };
+type SP = { status?: string; payment?: string; q?: string; from?: string; to?: string; phone?: string; page?: string; bulk?: string; denied?: string };
 
 export default async function Orders(props: { searchParams: Promise<SP> }) {
+  const me = await requireAdmin();
   const sp = await props.searchParams;
   const { status = '', payment = '', q = '', from = '', to = '', phone = '' } = sp;
   const page = Math.max(1, Number(sp.page) || 1);
@@ -65,7 +67,8 @@ export default async function Orders(props: { searchParams: Promise<SP> }) {
         {(q || payment || from || to || phone) && <Link href={`/admin/orders${status ? '?status=' + status : ''}`} className="btn-ghost !py-2.5">Clear</Link>}
       </form>
 
-      <OrdersTable orders={orders} />
+      <Flash ok={sp.bulk ? `${sp.bulk} order(s) updated` : null} error={sp.denied ? 'That page is for the owner only.' : null} />
+      <OrdersTable orders={orders} bulkBack={`/admin/orders${qs({ page: page > 1 ? String(page) : '' })}`} />
 
       {pages > 1 && (
         <div className="mt-5 flex items-center justify-between gap-3 text-sm">

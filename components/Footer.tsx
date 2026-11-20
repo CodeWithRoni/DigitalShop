@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { SHOP_NAME, WHATSAPP } from '@/lib/utils';
+
 import Logo from './Logo';
 
-export default function Footer() {
+export default function Footer({ shopName, whatsapp, email }: { shopName: string; whatsapp?: string; email?: string }) {
   return (
     <footer className="relative mt-24 border-t border-white/[0.06]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand/60 to-transparent" />
@@ -24,12 +24,13 @@ export default function Footer() {
         </div>
         <div className="flex flex-col gap-2.5">
           <div className="mb-1 font-semibold text-white">Contact</div>
-          {WHATSAPP && <a href={`https://wa.me/${WHATSAPP}`} className="hover:text-white">WhatsApp: +{WHATSAPP}</a>}
+          {whatsapp && <a href={`https://wa.me/${whatsapp}`} className="hover:text-white">WhatsApp: +{whatsapp}</a>}
+          {email && <a href={`mailto:${email}`} className="hover:text-white">{email}</a>}
           <span>Bangla &amp; English support</span>
         </div>
       </div>
       <div className="border-t border-white/[0.06] py-5 text-center text-xs text-zinc-500">
-        © {new Date().getFullYear()} {SHOP_NAME}. All rights reserved. Independent reseller — not affiliated with the brands listed.
+        © {new Date().getFullYear()} {shopName}. All rights reserved. Independent reseller — not affiliated with the brands listed.
       </div>
     </footer>
   );

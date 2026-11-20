@@ -1,5 +1,5 @@
 export type Category = { id: number; slug: string; name: string; description: string | null; sort_order: number };
-export type Package = { id: number; product_id: number; name: string; price: number; is_active: boolean; sort_order: number };
+export type Package = { id: number; product_id: number; name: string; price: number; is_active: boolean; sort_order: number; stock_managed?: boolean; stock_available?: number };
 export type Product = {
   id: number; category_id: number | null; slug: string; name: string;
   short_description: string | null; description: string | null; image_url: string | null;
@@ -18,6 +18,7 @@ export type Order = {
   note: string | null; total: number; status: OrderStatus; payment_status: PaymentStatus;
   payment_method: string | null; tran_id: string | null; val_id: string | null; bank_tran_id: string | null;
   paid_at: string | null; delivery_message: string | null; admin_note: string | null;
+  subtotal: number | null; discount: number; coupon_code: string | null; auto_delivered: boolean;
   created_at: string; updated_at: string; order_items?: OrderItem[];
 };
 export type CartItem = {

@@ -40,3 +40,12 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff !important; }
+  aside, .no-print, nextjs-portal { display: none !important; }
+  main { padding: 0 !important; }
+  .print-area * { color: #111 !important; background: transparent !important; border-color: #ddd !important; box-shadow: none !important; backdrop-filter: none !important; }
+  .print-area .bg-gradient-to-t { background: #7B2FF7 !important; }
+}

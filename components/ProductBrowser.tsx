@@ -5,7 +5,9 @@ import type { Category, Product } from '@/lib/types';
 import { minPrice, taka } from '@/lib/utils';
 import ProductIcon from './ProductIcon';
 
-export default function ProductBrowser({ categories, products }: { categories: Category[]; products: Product[] }) {
+type Ratings = Record<string, { avg: number; count: number }>;
+
+export default function ProductBrowser({ categories, products, ratings = {} }: { categories: Category[]; products: Product[]; ratings?: Ratings }) {
   const [active, setActive] = useState<number | 'all'>('all');
   const [q, setQ] = useState('');
 
@@ -39,10 +41,10 @@ export default function ProductBrowser({ categories, products }: { categories: C
             </div>
             <span className="hidden text-xs text-zinc-500 sm:block">{items.length} products</span>
           </div>
-          <Grid items={items} />
+          <Grid items={items} ratings={ratings} />
         </section>
       ))}
-      {uncategorized.length > 0 && <Grid items={uncategorized} />}
+      {uncategorized.length > 0 && <Grid items={uncategorized} ratings={ratings} />}
       {!filtered.length && <p className="py-16 text-center text-zinc-500">{q.trim() ? <>No products match “{q}”.</> : products.length ? 'No products in this category yet.' : 'Products are coming soon.'}</p>}
     </div>
   );
@@ -57,7 +59,7 @@ function Tab({ on, onClick, children }: { on: boolean; onClick: () => void; chil
   );
 }
 
-function Grid({ items }: { items: Product[] }) {
+function Grid({ items, ratings }: { items: Product[]; ratings: Ratings }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
       {items.map((p) => {
@@ -72,7 +74,10 @@ function Grid({ items }: { items: Product[] }) {
                 {p.is_featured && <span className="rounded-md bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">Popular</span>}
               </div>
               <div className="mt-4 font-semibold leading-snug">{p.name}</div>
-              <div className="mt-1 text-xs text-zinc-500">{p.packages?.length || 0} packages</div>
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-zinc-500">
+                {ratings[p.id] ? <><span className="text-amber-400">★</span><span className="text-zinc-300">{ratings[p.id].avg.toFixed(1)}</span><span>({ratings[p.id].count})</span><span>·</span></> : null}
+                {p.packages?.some((k) => k.stock_managed && (k.stock_available || 0) > 0) ? <span className="text-accent">⚡ Instant</span> : <span>{p.packages?.length || 0} packages</span>}
+              </div>
               <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3">
                 <span className="text-sm">
                   {min !== null ? <><span className="text-xs text-zinc-500">from </span><span className="font-bold text-white">{taka(min)}</span></> : <span className="text-zinc-500">Coming soon</span>}

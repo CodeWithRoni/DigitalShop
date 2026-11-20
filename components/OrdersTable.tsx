@@ -3,37 +3,44 @@ import type { Order } from '@/lib/types';
 import StatusBadge from './StatusBadge';
 import { taka } from '@/lib/utils';
 import { EmptyState } from './admin/ui';
+import BulkBar, { SelectAll } from './admin/BulkBar';
 
 const fmt = (d: string) => new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const items = (o: Order) => o.order_items?.map((i) => `${i.product_name} · ${i.package_name}${i.quantity > 1 ? ' ×' + i.quantity : ''}`).join(', ');
 
-export default function OrdersTable({ orders }: { orders: Order[] }) {
+export default function OrdersTable({ orders, bulkBack }: { orders: Order[]; bulkBack?: string }) {
+  const box = (id: number) => bulkBack ? <input type="checkbox" name="ids" value={id} form="bulk-orders" aria-label="Select order" className="h-4 w-4 accent-[#7B2FF7]" /> : null;
   if (!orders.length) return <div className="card"><EmptyState icon="orders" title="No orders found" text="Try a different filter or date range." /></div>;
   return (
     <>
+      {bulkBack && <BulkBar back={bulkBack} />}
       {/* Mobile: cards */}
       <div className="space-y-2.5 md:hidden">
         {orders.map((o) => (
-          <Link key={o.id} href={`/admin/orders/${o.id}`} className="card block p-4 active:bg-white/[0.06]">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-sm font-semibold text-brand-light">{o.code}</span>
-              <span className="font-bold">{taka(o.total)}</span>
-            </div>
-            <div className="mt-1 truncate text-sm text-zinc-300">{items(o)}</div>
-            <div className="mt-1 text-xs text-zinc-500">{o.customer_name} · {o.customer_phone} · {fmt(o.created_at)}</div>
-            <div className="mt-2.5 flex gap-2"><StatusBadge s={o.payment_status} /><StatusBadge s={o.status} /></div>
-          </Link>
+          <div key={o.id} className="card flex items-start gap-3 p-4">
+            {bulkBack && <span className="pt-0.5">{box(o.id)}</span>}
+            <Link href={`/admin/orders/${o.id}`} className="block min-w-0 flex-1 active:opacity-70">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-sm font-semibold text-brand-light">{o.code}</span>
+                <span className="font-bold">{taka(o.total)}</span>
+              </div>
+              <div className="mt-1 truncate text-sm text-zinc-300">{items(o)}</div>
+              <div className="mt-1 text-xs text-zinc-500">{o.customer_name} · {o.customer_phone} · {fmt(o.created_at)}</div>
+              <div className="mt-2.5 flex gap-2"><StatusBadge s={o.payment_status} /><StatusBadge s={o.status} /></div>
+            </Link>
+          </div>
         ))}
       </div>
       {/* Desktop: table */}
       <div className="card hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
           <thead className="bg-white/[0.02] text-[11px] uppercase tracking-wide text-zinc-500">
-            <tr><th className="px-4 py-3 font-medium">Order</th><th className="px-4 py-3 font-medium">Customer</th><th className="px-4 py-3 font-medium">Items</th><th className="px-4 py-3 text-right font-medium">Total</th><th className="px-4 py-3 font-medium">Payment</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Date</th></tr>
+            <tr>{bulkBack && <th className="w-10 py-3 pl-4"><SelectAll /></th>}<th className="px-4 py-3 font-medium">Order</th><th className="px-4 py-3 font-medium">Customer</th><th className="px-4 py-3 font-medium">Items</th><th className="px-4 py-3 text-right font-medium">Total</th><th className="px-4 py-3 font-medium">Payment</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Date</th></tr>
           </thead>
           <tbody className="divide-y divide-white/[0.05]">
             {orders.map((o) => (
               <tr key={o.id} className="group transition hover:bg-white/[0.03]">
+                {bulkBack && <td className="py-3 pl-4">{box(o.id)}</td>}
                 <td className="px-4 py-3"><Link href={`/admin/orders/${o.id}`} className="font-mono font-semibold text-brand-light group-hover:underline">{o.code}</Link></td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">

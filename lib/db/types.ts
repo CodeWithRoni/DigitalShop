@@ -1,6 +1,6 @@
 import type { Category, Order, OrderItem, Package, Product } from '@/lib/types';
 
-export type NewOrder = Omit<Order, 'id' | 'created_at' | 'updated_at' | 'order_items' | 'val_id' | 'bank_tran_id' | 'paid_at' | 'delivery_message' | 'admin_note' | 'payment_method'>;
+export type NewOrder = Omit<Order, 'id' | 'created_at' | 'updated_at' | 'order_items' | 'val_id' | 'bank_tran_id' | 'paid_at' | 'delivery_message' | 'admin_note' | 'payment_method' | 'auto_delivered'>;
 export type NewOrderItem = Omit<OrderItem, 'id' | 'order_id'>;
 export type OrderFilter = {
   status?: string; payment?: string; q?: string; phone?: string;

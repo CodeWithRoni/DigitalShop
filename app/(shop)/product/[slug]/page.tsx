@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import ProductIcon from '@/components/ProductIcon';
 import PackagePicker from '@/components/PackagePicker';
 import { minPrice, taka } from '@/lib/utils';
+import { approvedReviews, productRating } from '@/lib/reviews';
+import Stars from '@/components/Stars';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
   const all = await db.listProducts();
   const related = all.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 6);
   const min = minPrice(product.packages);
+  const [rating, reviews] = await Promise.all([productRating(product.id), approvedReviews(product.id, 12)]);
 
   return (
     <div className="container-x py-8">
@@ -35,6 +38,7 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
           <div>
             {product.categories && <span className="badge mb-2 border-line bg-white/5 text-zinc-300">{product.categories.name}</span>}
             <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">{product.name} <span className="font-semibold text-zinc-400">— Price in Bangladesh</span></h1>
+            {rating.count > 0 && <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-sm text-zinc-300 hover:text-white"><Stars value={rating.avg} size={15} />{rating.avg.toFixed(1)} · {rating.count} review{rating.count > 1 ? 's' : ''}</a>}
             {product.short_description && <p className="mt-2 max-w-2xl text-sm text-zinc-400">{product.short_description}</p>}
             {min !== null && <span className="btn-primary mt-4 !cursor-default !py-1.5">Starting from {taka(min)}</span>}
           </div>
@@ -47,6 +51,23 @@ export default async function ProductPage(props: { params: Promise<{ slug: strin
           <p className="mb-4 mt-1 text-sm text-zinc-400">Select a package → enter delivery info → pay online. Done.</p>
           <PackagePicker product={product} />
           {product.description && <div className="card mt-6 whitespace-pre-line p-5 text-sm text-zinc-300">{product.description}</div>}
+          {reviews.length > 0 && (
+            <section id="reviews" className="mt-10 scroll-mt-24">
+              <div className="mb-4 flex items-center gap-3">
+                <h2 className="font-display text-xl font-bold">Customer reviews</h2>
+                <span className="flex items-center gap-1.5 text-sm text-zinc-400"><Stars value={rating.avg} size={14} />{rating.avg.toFixed(1)} ({rating.count})</span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {reviews.map((r) => (
+                  <div key={r.id} className="card p-4">
+                    <div className="flex items-center justify-between"><span className="font-medium">{r.customer_name}</span><Stars value={r.rating} size={13} /></div>
+                    {r.comment && <p className="mt-2 text-sm text-zinc-300">{r.comment}</p>}
+                    <div className="mt-2 text-[11px] text-zinc-500">✓ Verified purchase · {new Date(r.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'Asia/Dhaka' })}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
         <aside className="card h-fit p-5 text-sm">
           <div className="mb-3 font-semibold">Why buy here?</div>

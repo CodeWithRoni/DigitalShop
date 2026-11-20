@@ -1,3 +1,4 @@
+import { requireOwner } from '@/lib/admin';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { toggleProduct } from '../../actions';
@@ -7,6 +8,7 @@ import { PageHeader } from '@/components/admin/ui';
 import Icon from '@/components/admin/Icon';
 
 export default async function Products(props: { searchParams: Promise<{ q?: string }> }) {
+  await requireOwner();
   const searchParams = await props.searchParams;
   const [products, cats] = await Promise.all([db.listProducts({ includeInactive: true }), db.listCategories()]);
   const q = (searchParams.q || '').toLowerCase();

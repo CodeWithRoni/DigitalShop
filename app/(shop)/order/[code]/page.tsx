@@ -4,7 +4,11 @@ import { db } from '@/lib/db';
 import { canView } from '@/lib/orderAccess';
 import StatusBadge from '@/components/StatusBadge';
 import ClearCart from '@/components/ClearCart';
-import { WHATSAPP, taka } from '@/lib/utils';
+import { taka } from '@/lib/utils';
+import { getSettings } from '@/lib/settings';
+import { reviewableItems } from '@/lib/reviews';
+import ReviewForm from '@/components/ReviewForm';
+import Stars from '@/components/Stars';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Order status', robots: { index: false } };
@@ -18,6 +22,8 @@ export default async function OrderPage(props: { params: Promise<{ code: string 
   const order = await db.getOrderByCode(code);
   if (!order) notFound();
 
+  const [settings, reviewables] = await Promise.all([getSettings(), reviewableItems(order.id)]);
+  const WHATSAPP = settings.whatsapp;
   const pay = searchParams.payment;
   const paid = order.payment_status === 'paid';
   const stepIdx = STEPS.indexOf(order.status as (typeof STEPS)[number]);
@@ -25,7 +31,9 @@ export default async function OrderPage(props: { params: Promise<{ code: string 
   return (
     <div className="container-x max-w-3xl py-10">
       {paid && <ClearCart />}
-      {pay === 'success' && paid && <Banner tone="ok">✅ Payment successful! We&apos;re processing your order — usually within 15 minutes.</Banner>}
+      {pay === 'success' && paid && (order.status === 'delivered'
+        ? <Banner tone="ok">✅ Payment successful — your order is delivered! Your details are below.</Banner>
+        : <Banner tone="ok">✅ Payment successful! We&apos;re processing your order — usually within 15 minutes.</Banner>)}
       {pay === 'failed' && !paid && <Banner tone="err">Payment failed. You can try again below or contact support.</Banner>}
       {pay === 'cancelled' && !paid && <Banner tone="warn">Payment was cancelled. Your order is saved — you can pay again.</Banner>}
 
@@ -64,6 +72,9 @@ export default async function OrderPage(props: { params: Promise<{ code: string 
               <div className="font-semibold">{taka(i.unit_price * i.quantity)}</div>
             </div>
           ))}
+          {Number(order.discount) > 0 && (
+            <div className="flex justify-between p-4 text-sm text-green-300"><span>Coupon <span className="font-mono">{order.coupon_code}</span></span><span>− {taka(order.discount)}</span></div>
+          )}
           <div className="flex justify-between p-4 font-bold"><span>Total</span><span className="text-brand">{taka(order.total)}</span></div>
         </div>
 
@@ -76,6 +87,18 @@ export default async function OrderPage(props: { params: Promise<{ code: string 
           <Link href="/" className="btn-ghost">Continue shopping</Link>
         </div>
       </div>
+
+      {reviewables.length > 0 && (
+        <div className="card mt-6 p-6">
+          <h2 className="font-display text-lg font-bold">Rate your purchase</h2>
+          <p className="mb-4 text-sm text-zinc-400">Your review helps other customers. It appears after a quick check.</p>
+          <div className="space-y-4">
+            {reviewables.map((r) => r.rating
+              ? <div key={r.product_id} className="flex items-center justify-between rounded-xl border border-white/10 p-4 text-sm"><span className="font-medium">{r.product_name}</span><span className="flex items-center gap-2"><Stars value={r.rating} size={14} /><span className="text-xs text-zinc-500">Thanks!</span></span></div>
+              : <ReviewForm key={r.product_id} code={order.code} productId={r.product_id} productName={r.product_name} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

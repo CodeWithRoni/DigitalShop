@@ -1,3 +1,4 @@
+import { requireOwner } from '@/lib/admin';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import RevenueChart from '@/components/admin/RevenueChart';
@@ -25,6 +26,7 @@ const ago = (iso: string) => {
 };
 
 export default async function Dashboard(props: { searchParams: Promise<{ range?: string }> }) {
+  await requireOwner();
   const { range = '30' } = await props.searchParams;
   const days = RANGES[range as keyof typeof RANGES] || 30;
   const [a, queue, recent] = await Promise.all([

@@ -98,3 +98,31 @@ export function EmptyState({ icon, title, text, action }: { icon: IconName; titl
     </div>
   );
 }
+
+/** Green/red message bar shown after an action. */
+export function Flash({ ok, error }: { ok?: React.ReactNode; error?: React.ReactNode }) {
+  if (!ok && !error) return null;
+  return (
+    <div className={`mb-5 flex items-start gap-2 rounded-xl border px-4 py-3 text-sm ${error ? 'border-red-500/30 bg-red-500/10 text-red-200' : 'border-green-500/30 bg-green-500/10 text-green-200'}`}>
+      <span>{error ? '⚠' : '✓'}</span><span>{error || ok}</span>
+    </div>
+  );
+}
+
+/** CSS-only switch that submits like a checkbox (works in server forms). */
+export function FormSwitch({ name, defaultChecked, label, desc }: { name: string; defaultChecked?: boolean; label: string; desc?: string }) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-4">
+      <span><span className="block text-sm font-medium">{label}</span>{desc && <span className="block text-xs text-zinc-500">{desc}</span>}</span>
+      <span className="relative shrink-0">
+        <input type="checkbox" name={name} defaultChecked={defaultChecked} className="peer sr-only" />
+        <span className="block h-6 w-10 rounded-full bg-white/10 transition peer-checked:bg-gradient-to-r peer-checked:from-brand peer-checked:to-accent-dark peer-focus-visible:ring-2 peer-focus-visible:ring-brand/50" />
+        <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-all peer-checked:left-5" />
+      </span>
+    </label>
+  );
+}
+
+export function Label({ children, hint }: { children: React.ReactNode; hint?: React.ReactNode }) {
+  return <label className="label">{children}{hint && <span className="ml-1 font-normal text-zinc-600">{hint}</span>}</label>;
+}
