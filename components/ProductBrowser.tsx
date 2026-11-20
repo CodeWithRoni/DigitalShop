@@ -43,7 +43,7 @@ export default function ProductBrowser({ categories, products }: { categories: C
         </section>
       ))}
       {uncategorized.length > 0 && <Grid items={uncategorized} />}
-      {!filtered.length && <p className="py-16 text-center text-zinc-500">No products match “{q}”.</p>}
+      {!filtered.length && <p className="py-16 text-center text-zinc-500">{q.trim() ? <>No products match “{q}”.</> : products.length ? 'No products in this category yet.' : 'Products are coming soon.'}</p>}
     </div>
   );
 }
