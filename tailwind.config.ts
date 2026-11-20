@@ -20,8 +20,6 @@ const config: Config = {
         gradient: { '0%,100%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' } },
         blob: { '0%,100%': { transform: 'translate(0,0) scale(1)' }, '33%': { transform: 'translate(40px,-30px) scale(1.1)' }, '66%': { transform: 'translate(-30px,20px) scale(0.95)' } },
         'fade-up': { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'none' } },
-        glow: { '0%,100%': { opacity: '.55', transform: 'translateX(-50%) scale(1)' }, '50%': { opacity: '.85', transform: 'translateX(-50%) scale(1.08)' } },
-        pop: { '0%': { transform: 'scale(.5)' }, '70%': { transform: 'scale(1.2)' }, '100%': { transform: 'scale(1)' } },
         pulseRing: { '0%': { transform: 'scale(.9)', opacity: '.7' }, '100%': { transform: 'scale(1.6)', opacity: '0' } },
       },
       animation: {
@@ -31,8 +29,6 @@ const config: Config = {
         gradient: 'gradient 6s ease infinite',
         blob: 'blob 18s ease-in-out infinite',
         'fade-up': 'fade-up .6s ease-out both',
-        glow: 'glow 8s ease-in-out infinite',
-        pop: 'pop .35s ease-out',
         ring: 'pulseRing 1.8s ease-out infinite',
       },
     },
