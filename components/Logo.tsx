@@ -1,15 +1,19 @@
+/* eslint-disable @next/next/no-img-element */
 import { SHOP_NAME } from '@/lib/utils';
-export default function Logo({ size = 34, withText = true, sub }: { size?: number; withText?: boolean; sub?: string }) {
+
+/**
+ * Brand logo from /public (see /brand for the full kit).
+ * - full: shopping-bag mark + "DigitalShop" wordmark (logo-dark.png, for dark backgrounds)
+ * - mark: the "D + cart" app icon only
+ */
+export default function Logo({ height = 34, variant = 'full', sub }: { height?: number; variant?: 'full' | 'mark'; sub?: string }) {
+  if (variant === 'mark') {
+    return <img src="/mark.png" alt={SHOP_NAME} width={Math.round(height * 1.12)} height={height} style={{ height, width: 'auto' }} />;
+  }
   return (
-    <span className="flex items-center gap-2.5">
-      <span className="relative grid place-items-center rounded-xl bg-gradient-to-br from-brand to-accent-dark shadow-lg shadow-brand/30" style={{ width: size, height: size }}>
-        <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="white" aria-hidden><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" /></svg>
-      </span>
-      {withText && (
-        <span className="font-display text-[17px] font-extrabold tracking-tight">
-          {SHOP_NAME}{sub && <span className="ml-1.5 text-xs font-medium text-zinc-500">{sub}</span>}
-        </span>
-      )}
+    <span className="flex items-center gap-2">
+      <img src="/logo-dark.png" alt={SHOP_NAME} width={Math.round(height * 3.8)} height={height} style={{ height, width: 'auto' }} />
+      {sub && <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[11px] font-medium text-zinc-400">{sub}</span>}
     </span>
   );
 }

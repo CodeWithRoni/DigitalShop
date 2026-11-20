@@ -25,8 +25,8 @@ export default function ProductForm({ product, categories }: { product?: Product
         <div><label className="label">Delivery field placeholder</label><input name="delivery_hint" defaultValue={p?.delivery_hint || ''} className="input" /></div>
       </div>
       <div className="flex flex-wrap gap-6 text-sm">
-        <label className="flex items-center gap-2"><input type="checkbox" name="is_active" defaultChecked={p ? p.is_active : true} className="accent-[#8b5cf6]" /> Visible in store</label>
-        <label className="flex items-center gap-2"><input type="checkbox" name="is_featured" defaultChecked={p?.is_featured} className="accent-[#8b5cf6]" /> Featured on homepage</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="is_active" defaultChecked={p ? p.is_active : true} className="accent-[#7B2FF7]" /> Visible in store</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="is_featured" defaultChecked={p?.is_featured} className="accent-[#7B2FF7]" /> Featured on homepage</label>
       </div>
       <button className="btn-primary">{p ? 'Save product' : 'Create product'}</button>
     </form>

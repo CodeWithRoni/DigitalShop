@@ -4,11 +4,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: '#06070f',
-        card: '#0d0f1c',
+        bg: '#080E20',
+        card: '#111A36',
         line: 'rgba(255,255,255,0.08)',
-        brand: { DEFAULT: '#8b5cf6', dark: '#7c3aed', light: '#a78bfa' },
-        accent: { DEFAULT: '#22d3ee', dark: '#06b6d4' },
+        brand: { DEFAULT: '#7B2FF7', dark: '#6A1FE6', light: '#A98BFF' },
+        accent: { DEFAULT: '#10D7EF', dark: '#3677FF' }, // dark = brand blue
       },
       fontFamily: {
         sans: ['Inter', 'Hind Siliguri', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],

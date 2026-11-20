@@ -62,11 +62,18 @@ Database password kokhono GitHub-e push korben na — sudhu `.env.local` / Verce
   VPS (`npm run build && npm start`)-e local file cholbe, kintu backup rakhun.
 - Production-e must: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `AUTH_SECRET` (32+ character random).
 
+## Brand / Logo
+- Full brand kit: `brand/` folder (SVG source, app icons, Android launcher icons)
+- Site-e use hocche: `public/logo-dark.png` (header/footer/admin), `public/mark.png` (admin login),
+  `public/favicon.ico` + `icon-*.png` (browser/phone icon), `public/site.webmanifest`, `public/og-image.png` (share preview)
+- Brand colors: navy `#080E20`, purple `#7B2FF7`, blue `#3677FF`, cyan `#10D7EF` (`tailwind.config.ts`)
+
 ## Customize
 | Ki | Kothay |
 |---|---|
 | Shop nam, WhatsApp | `.env` → `NEXT_PUBLIC_SHOP_NAME`, `NEXT_PUBLIC_WHATSAPP` (880 diye) |
-| Rong | `tailwind.config.ts` → `brand` |
+| Rong | `tailwind.config.ts` → `brand`, `accent` |
+| Logo | `public/logo-dark.png` replace korun |
 | Home text, FAQ | `app/(shop)/page.tsx` |
 | Refund / Terms | `app/(shop)/refund/page.tsx`, `app/(shop)/terms/page.tsx` |
 | Product, dam | Admin Panel theke |

@@ -65,7 +65,7 @@ function Grid({ items }: { items: Product[] }) {
         return (
           <Link key={p.id} href={`/product/${p.slug}`}
             className="group relative rounded-2xl bg-gradient-to-br from-white/[0.09] to-white/[0.02] p-px transition duration-300 hover:-translate-y-1 hover:from-brand hover:to-accent-dark hover:shadow-2xl hover:shadow-brand/20">
-            <div className="relative flex h-full flex-col overflow-hidden rounded-[15px] bg-[#0b0d19] p-5">
+            <div className="relative flex h-full flex-col overflow-hidden rounded-[15px] bg-[#0c1328] p-5">
               <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-brand/20 opacity-0 blur-2xl transition group-hover:opacity-100" />
               <div className="flex items-start justify-between">
                 <ProductIcon src={p.image_url} name={p.name} size={52} />

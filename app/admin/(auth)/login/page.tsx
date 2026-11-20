@@ -14,7 +14,7 @@ export default function Login() {
     <div className="grid min-h-screen place-items-center p-6">
       <form action={action} className="card w-full max-w-sm space-y-4 p-7">
         <div className="text-center">
-          <div className="mb-4 flex justify-center"><Logo size={44} withText={false} /></div>
+          <div className="mb-4 flex justify-center"><Logo variant="mark" height={56} /></div>
           <h1 className="text-xl font-bold">Admin Panel</h1>
           <p className="text-sm text-zinc-400">Sign in to manage orders</p>
         </div>

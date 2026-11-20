@@ -15,7 +15,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     <div className="min-h-screen lg:grid lg:grid-cols-[230px_1fr]">
       <aside className="border-b border-line bg-white/[0.02] lg:min-h-screen lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between gap-2 p-4 lg:block">
-          <Link href="/admin"><Logo size={30} sub="Admin" /></Link>
+          <Link href="/admin"><Logo height={28} sub="Admin" /></Link>
           <Link href="/" target="_blank" className="text-xs text-zinc-400 hover:text-white lg:mt-2 lg:block">View store ↗</Link>
         </div>
         <AdminNav />

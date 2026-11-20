@@ -87,7 +87,7 @@ export default function CartPage() {
             <span className="text-2xl font-extrabold text-brand">{taka(total)}</span>
           </div>
           <label className="flex items-start gap-2 text-xs text-zinc-400">
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-[#8b5cf6]" />
+            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-[#7B2FF7]" />
             <span>I agree to the <Link href="/terms" className="underline">Terms</Link> and <Link href="/refund" className="underline">Refund Policy</Link>.</span>
           </label>
           {error && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}

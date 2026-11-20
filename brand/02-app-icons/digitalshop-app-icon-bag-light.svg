@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs><linearGradient id="tileBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#F0F5FF"/><stop offset="1" stop-color="#DCEBFF"/>
+        </linearGradient></defs><rect width="1024" height="1024" rx="220" fill="url(#tileBg)"/><g transform='translate(40,40) scale(.92)'>
+<defs>
+  <linearGradient id="bagGrad" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="#712CF4"/>
+    <stop offset="0.52" stop-color="#315DFF"/>
+    <stop offset="1" stop-color="#12D8EF"/>
+  </linearGradient>
+  <linearGradient id="bagShine" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity=".25"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+  </linearGradient>
+</defs>
+<path d="M250 340 Q250 300 292 300 H732 Q774 300 774 342 L730 810 Q726 858 678 858 H322 Q274 858 270 810 Z" fill="url(#bagGrad)"/>
+<path d="M382 334 V260 C382 145 642 145 642 260 V334" fill="none" stroke="#FFFFFF" stroke-width="34" stroke-linecap="round"/>
+<path d="M286 356 H738 L700 785 Q696 820 660 820 H340 Q304 820 300 785 Z" fill="url(#bagShine)"/>
+<text x="512" y="690" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="420" font-weight="800" font-style="italic" fill="#FFFFFF">D</text>
+</g>
+</svg>

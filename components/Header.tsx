@@ -16,7 +16,7 @@ export default function Header() {
   return (
     <header className={`sticky top-0 z-40 transition-all duration-300 ${scrolled ? 'border-b border-white/[0.06] bg-bg/70 shadow-2xl shadow-black/40 backdrop-blur-xl' : 'border-b border-transparent'}`}>
       <div className="container-x flex h-16 items-center justify-between gap-4">
-        <Link href="/"><Logo /></Link>
+        <Link href="/" aria-label="Home"><Logo height={36} /></Link>
         <nav className="flex items-center gap-1 text-sm text-zinc-400 sm:gap-2">
           {[['/', 'Home'], ['/#products', 'Products'], ['/track', 'Track Order']].map(([h, l], i) => (
             <Link key={h} href={h} className={`rounded-lg px-3 py-2 transition hover:bg-white/5 hover:text-white ${i < 2 ? 'hidden sm:block' : ''}`}>{l}</Link>

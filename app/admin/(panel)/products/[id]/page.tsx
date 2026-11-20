@@ -27,7 +27,7 @@ export default async function EditProduct({ params, searchParams }: { params: { 
               <div className="min-w-[160px] flex-1"><label className="label">Name</label><input name="name" defaultValue={k.name} className="input !py-1.5" /></div>
               <div className="w-28"><label className="label">Price ৳</label><input name="price" type="number" step="0.01" min="0" defaultValue={k.price} className="input !py-1.5" /></div>
               <div className="w-16"><label className="label">Order</label><input name="sort_order" type="number" defaultValue={k.sort_order} className="input !py-1.5" /></div>
-              <label className="flex items-center gap-1.5 pb-2 text-xs"><input type="checkbox" name="is_active" defaultChecked={k.is_active} className="accent-[#8b5cf6]" />Active</label>
+              <label className="flex items-center gap-1.5 pb-2 text-xs"><input type="checkbox" name="is_active" defaultChecked={k.is_active} className="accent-[#7B2FF7]" />Active</label>
               <button className="btn-ghost !px-3 !py-1.5">Save</button>
             </form>
             <form action={deletePackage}>

@@ -58,7 +58,7 @@ export default async function Home() {
             <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-zinc-400">
               {['No international card needed', 'Secure payment', 'Bangla support'].map((t) => (
                 <span key={t} className="flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="3"><path d="M20 6 9 17l-5-5"/></svg>{t}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10D7EF" strokeWidth="3"><path d="M20 6 9 17l-5-5"/></svg>{t}
                 </span>
               ))}
             </div>

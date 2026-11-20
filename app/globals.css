@@ -7,11 +7,11 @@ html { scroll-behavior: smooth; }
 body {
   @apply bg-bg text-zinc-100 antialiased;
   background-image:
-    radial-gradient(60rem 40rem at 10% -10%, rgba(139,92,246,0.14), transparent 60%),
-    radial-gradient(50rem 35rem at 110% 10%, rgba(34,211,238,0.10), transparent 60%);
+    radial-gradient(60rem 40rem at 10% -10%, rgba(123,47,247,0.16), transparent 60%),
+    radial-gradient(50rem 35rem at 110% 10%, rgba(16,215,239,0.10), transparent 60%);
   background-attachment: fixed;
 }
-::selection { background: rgba(139,92,246,.4); }
+::selection { background: rgba(123,47,247,.45); }
 
 @layer components {
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50; }
