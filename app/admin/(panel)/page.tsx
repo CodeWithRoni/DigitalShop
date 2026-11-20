@@ -10,17 +10,17 @@ export default async function Dashboard() {
   const cards = [
     ['Needs delivery', String(toDeliver.length), 'Paid & processing', '/admin/orders?status=processing'],
     ['Today', `${s.todayOrders} order${s.todayOrders === 1 ? '' : 's'}`, `${taka(s.todayRevenue)} paid`, '/admin/orders'],
-    ['Total revenue', taka(s.revenue), `${s.paidOrders} paid orders`, '/admin/orders?payment=paid'],
+    ['Total revenue', taka(s.revenue), `${s.paidOrders} paid order${s.paidOrders === 1 ? '' : 's'}`, '/admin/orders?payment=paid'],
     ['Pending payment', String(s.pending), 'Not paid yet', '/admin/orders?status=pending'],
   ];
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {cards.map(([t, v, sub, href], i) => (
-          <Link key={t} href={href} className={`card p-5 transition hover:border-brand/50 ${i === 0 && toDeliver.length ? 'border-brand/50 bg-brand/5' : ''}`}>
-            <div className="text-xs uppercase tracking-wide text-zinc-500">{t}</div>
-            <div className="mt-2 text-2xl font-extrabold">{v}</div>
+          <Link key={t} href={href} className={`card p-4 transition sm:p-5 hover:border-brand/50 ${i === 0 && toDeliver.length ? 'border-brand/50 bg-brand/5' : ''}`}>
+            <div className="text-[11px] uppercase tracking-wide text-zinc-500 sm:text-xs">{t}</div>
+            <div className="mt-2 text-xl font-extrabold sm:text-2xl">{v}</div>
             <div className="mt-1 text-xs text-zinc-400">{sub}</div>
           </Link>
         ))}

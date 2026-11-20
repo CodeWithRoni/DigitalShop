@@ -12,18 +12,18 @@ export default async function Orders({ searchParams }: { searchParams: { status?
     <div>
       <h1 className="mb-6 text-2xl font-bold">Orders</h1>
       <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-wrap gap-2">
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
           {TABS.map(([v, l]) => (
             <Link key={v} href={`/admin/orders${qs(v)}`}
-              className={`rounded-full border px-3.5 py-1.5 text-sm ${status === v ? 'border-brand bg-brand text-white' : 'border-line text-zinc-300 hover:bg-white/5'}`}>{l}</Link>
+              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-sm ${status === v ? 'border-brand bg-brand text-white' : 'border-line text-zinc-300 hover:bg-white/5'}`}>{l}</Link>
           ))}
         </div>
-        <form className="flex gap-2">
+        <form className="flex flex-wrap gap-2">
           {status && <input type="hidden" name="status" value={status} />}
-          <select name="payment" defaultValue={payment} className="input !w-36">
+          <select name="payment" defaultValue={payment} className="input flex-1 sm:!w-36 sm:flex-none">
             <option value="">Any payment</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option><option value="failed">Failed</option><option value="refunded">Refunded</option>
           </select>
-          <input name="q" defaultValue={q} placeholder="Code, name, phone…" className="input !w-56" />
+          <input name="q" defaultValue={q} placeholder="Code, name, phone…" className="input order-first basis-full sm:order-none sm:!w-56 sm:basis-auto" />
           <button className="btn-ghost">Filter</button>
         </form>
       </div>

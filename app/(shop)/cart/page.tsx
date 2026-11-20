@@ -46,25 +46,31 @@ export default function CartPage() {
     );
 
   return (
-    <div className="container-x py-10">
-      <h1 className="mb-6 text-2xl font-bold">Cart &amp; Checkout</h1>
-      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+    <div className="container-x max-w-5xl py-6 sm:py-10">
+      <h1 className="mb-5 font-display text-2xl font-extrabold tracking-tight">Checkout</h1>
+      <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
         <div className="space-y-3">
           {items.map((it, i) => (
-            <div key={i} className="card flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-              <ProductIcon src={it.image} name={it.productName} size={48} />
-              <div className="min-w-0 flex-1">
-                <Link href={`/product/${it.slug}`} className="font-semibold hover:text-brand">{it.productName}</Link>
-                <div className="text-sm text-zinc-400">{it.packageName} · {taka(it.price)}</div>
-                <label className="mt-2 block text-xs text-zinc-500">{it.deliveryLabel}</label>
-                <input className="input mt-1 !py-1.5" value={it.deliveryInfo} onChange={(e) => update(i, { deliveryInfo: e.target.value })} maxLength={200} />
+            <div key={i} className="card p-4">
+              <div className="flex items-start gap-3">
+                <ProductIcon src={it.image} name={it.productName} size={44} />
+                <div className="min-w-0 flex-1">
+                  <Link href={`/product/${it.slug}`} className="font-semibold hover:text-brand-light">{it.productName}</Link>
+                  <div className="text-sm text-zinc-400">{it.packageName}</div>
+                </div>
+                <button onClick={() => remove(i)} className="grid h-8 w-8 place-items-center rounded-lg text-zinc-500 hover:bg-white/5 hover:text-red-400" aria-label="Remove">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+                </button>
               </div>
-              <div className="flex items-center gap-3">
-                <select className="input !w-20 !py-1.5" value={it.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })}>
-                  {Array.from({ length: 10 }, (_, n) => n + 1).map((n) => <option key={n}>{n}</option>)}
-                </select>
-                <div className="w-20 text-right font-bold">{taka(it.price * it.quantity)}</div>
-                <button onClick={() => remove(i)} className="text-zinc-500 hover:text-red-400" aria-label="Remove">✕</button>
+              <label className="mt-3 block text-xs text-zinc-500">{it.deliveryLabel}</label>
+              <input className="input mt-1 !py-2" value={it.deliveryInfo} onChange={(e) => update(i, { deliveryInfo: e.target.value })} maxLength={200} />
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center rounded-xl border border-white/10">
+                  <button type="button" className="px-3 py-1.5 text-zinc-300" onClick={() => update(i, { quantity: Math.max(1, it.quantity - 1) })} aria-label="Decrease">−</button>
+                  <span className="w-6 text-center text-sm font-semibold">{it.quantity}</span>
+                  <button type="button" className="px-3 py-1.5 text-zinc-300" onClick={() => update(i, { quantity: Math.min(50, it.quantity + 1) })} aria-label="Increase">+</button>
+                </div>
+                <div className="font-bold">{taka(it.price * it.quantity)}</div>
               </div>
             </div>
           ))}
@@ -84,7 +90,7 @@ export default function CartPage() {
 
           <div className="flex items-center justify-between border-t border-line pt-4">
             <span className="text-zinc-400">Total</span>
-            <span className="text-2xl font-extrabold text-brand">{taka(total)}</span>
+            <span className="font-display text-2xl font-extrabold">{taka(total)}</span>
           </div>
           <label className="flex items-start gap-2 text-xs text-zinc-400">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 accent-[#8b5cf6]" />
