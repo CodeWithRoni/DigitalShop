@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html { scroll-behavior: smooth; }
+body {
+  @apply bg-bg text-zinc-100 antialiased;
+  background-image:
+    radial-gradient(60rem 40rem at 10% -10%, rgba(139,92,246,0.14), transparent 60%),
+    radial-gradient(50rem 35rem at 110% 10%, rgba(34,211,238,0.10), transparent 60%);
+  background-attachment: fixed;
+}
+::selection { background: rgba(139,92,246,.4); }
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-gradient-to-r from-brand via-brand-dark to-accent-dark bg-[length:200%_100%] text-white shadow-lg shadow-brand/25 hover:bg-right hover:shadow-brand/40 active:scale-[.98]; }
+  .btn-ghost { @apply btn border border-white/10 bg-white/[0.04] text-zinc-100 backdrop-blur hover:border-white/20 hover:bg-white/[0.08]; }
+  .btn-danger { @apply btn bg-red-500/90 text-white hover:bg-red-500; }
+  .card { @apply rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm; }
+  .input { @apply w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-brand/70 focus:ring-4 focus:ring-brand/15; }
+  .label { @apply mb-1.5 block text-xs font-medium text-zinc-400; }
+  .badge { @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium; }
+  .container-x { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
+  .text-gradient { @apply animate-gradient bg-gradient-to-r from-brand-light via-accent to-brand-light bg-[length:200%_auto] bg-clip-text text-transparent; }
+  .eyebrow { @apply inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-medium text-brand-light; }
+  .grid-bg {
+    background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
