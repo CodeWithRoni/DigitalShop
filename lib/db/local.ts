@@ -5,6 +5,7 @@ import path from 'path';
 import seed from '@/data/seed.json';
 import type { Category, Order, OrderItem, Package, Product } from '@/lib/types';
 import type { DB, NewOrder, NewOrderItem, OrderFilter } from './types';
+import { computeAnalytics, computeCustomers, dhakaDate } from './analytics';
 
 type Store = {
   categories: Category[]; products: Product[]; packages: Package[];
@@ -95,14 +96,33 @@ export const localDb: DB = {
   async getOrderByTranId(t) { const s = await load(); const o = s.orders.find((x) => x.tran_id === t); return o ? clone(withItems(s, o)) : null; },
   async getOrderById(id) { const s = await load(); const o = s.orders.find((x) => x.id === id); return o ? clone(withItems(s, o)) : null; },
   async listOrders(f: OrderFilter = {}) {
+    return (await localDb.listOrdersPage(f)).orders;
+  },
+  async listOrdersPage(f: OrderFilter = {}) {
     const s = await load(); const q = f.q?.trim().toLowerCase();
-    return clone(s.orders
+    const all = s.orders
       .filter((o) => !f.status || o.status === f.status)
       .filter((o) => !f.payment || o.payment_status === f.payment)
+      .filter((o) => !f.phone || o.customer_phone === f.phone)
+      .filter((o) => !f.from || dhakaDate(o.created_at) >= f.from)
+      .filter((o) => !f.to || dhakaDate(o.created_at) <= f.to)
       .filter((o) => !q || [o.code, o.customer_name, o.customer_phone, o.customer_email || '', o.tran_id || ''].some((v) => v.toLowerCase().includes(q)))
-      .sort((a, b) => b.id - a.id)
-      .slice(0, f.limit || 200)
-      .map((o) => withItems(s, o)));
+      .sort((a, b) => b.id - a.id);
+    const off = f.offset || 0;
+    return { total: all.length, orders: clone(all.slice(off, off + (f.limit || 200)).map((o) => withItems(s, o))) };
+  },
+  async countByStatus() {
+    const s = await load(); const r: Record<string, number> = {};
+    for (const o of s.orders) r[o.status] = (r[o.status] || 0) + 1;
+    return r;
+  },
+  async analytics(days) {
+    const s = await load();
+    return computeAnalytics(s.orders.map((o) => withItems(s, o)), days);
+  },
+  async listCustomers(q) {
+    const s = await load();
+    return computeCustomers(s.orders, q);
   },
   async updateOrder(id, patch) {
     await mutate((s) => { const o = s.orders.find((x) => x.id === id); if (o) Object.assign(o, patch, { id, updated_at: now() }); });

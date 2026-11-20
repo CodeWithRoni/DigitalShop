@@ -1,13 +1,14 @@
 import { db } from '@/lib/db';
 import { deleteCategory, saveCategory } from '../../actions';
 import ConfirmButton from '@/components/ConfirmButton';
+import { PageHeader } from '@/components/admin/ui';
 
 export default async function Categories(props: { searchParams: Promise<{ error?: string }> }) {
   const searchParams = await props.searchParams;
   const [cats, products] = await Promise.all([db.listCategories(), db.listProducts({ includeInactive: true })]);
   return (
     <div className="max-w-4xl">
-      <h1 className="mb-6 text-2xl font-bold">Categories</h1>
+      <PageHeader title="Categories" subtitle="Group products on the storefront" />
       {searchParams.error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">{searchParams.error}</p>}
       <div className="card divide-y divide-line">
         {cats.map((c) => (

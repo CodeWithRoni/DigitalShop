@@ -2,7 +2,27 @@ import type { Category, Order, OrderItem, Package, Product } from '@/lib/types';
 
 export type NewOrder = Omit<Order, 'id' | 'created_at' | 'updated_at' | 'order_items' | 'val_id' | 'bank_tran_id' | 'paid_at' | 'delivery_message' | 'admin_note' | 'payment_method'>;
 export type NewOrderItem = Omit<OrderItem, 'id' | 'order_id'>;
-export type OrderFilter = { status?: string; payment?: string; q?: string; limit?: number };
+export type OrderFilter = {
+  status?: string; payment?: string; q?: string; phone?: string;
+  /** Inclusive dates in Asia/Dhaka, format YYYY-MM-DD */
+  from?: string; to?: string;
+  limit?: number; offset?: number;
+};
+export type OrderPage = { orders: Order[]; total: number };
+export type DailyPoint = { date: string; orders: number; paidOrders: number; revenue: number };
+export type PeriodTotals = { orders: number; paidOrders: number; revenue: number; aov: number; customers: number };
+export type Analytics = {
+  days: number;
+  daily: DailyPoint[];
+  current: PeriodTotals;
+  previous: PeriodTotals;
+  statusCounts: Record<string, number>;
+  topProducts: { name: string; units: number; revenue: number }[];
+};
+export type Customer = {
+  phone: string; name: string; email: string | null;
+  orders: number; paidOrders: number; spent: number; firstOrder: string; lastOrder: string;
+};
 export type Stats = {
   totalOrders: number; paidOrders: number; revenue: number; pending: number; processing: number;
   todayOrders: number; todayRevenue: number;
@@ -20,6 +40,10 @@ export interface DB {
   getOrderByTranId(tranId: string): Promise<Order | null>;
   getOrderById(id: number): Promise<Order | null>;
   listOrders(f?: OrderFilter): Promise<Order[]>;
+  listOrdersPage(f?: OrderFilter): Promise<OrderPage>;
+  countByStatus(): Promise<Record<string, number>>;
+  analytics(days: number): Promise<Analytics>;
+  listCustomers(q?: string): Promise<Customer[]>;
   updateOrder(id: number, patch: Partial<Order>): Promise<void>;
   stats(): Promise<Stats>;
 

@@ -2,12 +2,13 @@ import Link from 'next/link';
 import type { Order } from '@/lib/types';
 import StatusBadge from './StatusBadge';
 import { taka } from '@/lib/utils';
+import { EmptyState } from './admin/ui';
 
-const fmt = (d: string) => new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', dateStyle: 'short', timeStyle: 'short' });
-const items = (o: Order) => o.order_items?.map((i) => `${i.product_name} (${i.package_name})${i.quantity > 1 ? ' ×' + i.quantity : ''}`).join(', ');
+const fmt = (d: string) => new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const items = (o: Order) => o.order_items?.map((i) => `${i.product_name} · ${i.package_name}${i.quantity > 1 ? ' ×' + i.quantity : ''}`).join(', ');
 
 export default function OrdersTable({ orders }: { orders: Order[] }) {
-  if (!orders.length) return <div className="card p-10 text-center text-sm text-zinc-500">No orders found.</div>;
+  if (!orders.length) return <div className="card"><EmptyState icon="orders" title="No orders found" text="Try a different filter or date range." /></div>;
   return (
     <>
       {/* Mobile: cards */}
@@ -27,19 +28,24 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
       {/* Desktop: table */}
       <div className="card hidden overflow-x-auto md:block">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-white/[0.06] text-xs uppercase text-zinc-500">
-            <tr><th className="p-3">Order</th><th className="p-3">Customer</th><th className="p-3">Items</th><th className="p-3">Total</th><th className="p-3">Payment</th><th className="p-3">Status</th><th className="p-3">Date</th></tr>
+          <thead className="bg-white/[0.02] text-[11px] uppercase tracking-wide text-zinc-500">
+            <tr><th className="px-4 py-3 font-medium">Order</th><th className="px-4 py-3 font-medium">Customer</th><th className="px-4 py-3 font-medium">Items</th><th className="px-4 py-3 text-right font-medium">Total</th><th className="px-4 py-3 font-medium">Payment</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Date</th></tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody className="divide-y divide-white/[0.05]">
             {orders.map((o) => (
-              <tr key={o.id} className="hover:bg-white/[0.03]">
-                <td className="p-3"><Link href={`/admin/orders/${o.id}`} className="font-mono font-semibold text-brand-light hover:underline">{o.code}</Link></td>
-                <td className="p-3"><div>{o.customer_name}</div><div className="text-xs text-zinc-500">{o.customer_phone}</div></td>
-                <td className="max-w-[240px] truncate p-3 text-zinc-300">{items(o)}</td>
-                <td className="p-3 font-semibold">{taka(o.total)}</td>
-                <td className="p-3"><StatusBadge s={o.payment_status} /></td>
-                <td className="p-3"><StatusBadge s={o.status} /></td>
-                <td className="whitespace-nowrap p-3 text-xs text-zinc-500">{fmt(o.created_at)}</td>
+              <tr key={o.id} className="group transition hover:bg-white/[0.03]">
+                <td className="px-4 py-3"><Link href={`/admin/orders/${o.id}`} className="font-mono font-semibold text-brand-light group-hover:underline">{o.code}</Link></td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/5 text-[11px] font-bold uppercase text-zinc-300">{o.customer_name.slice(0, 2)}</span>
+                    <span><span className="block">{o.customer_name}</span><span className="block text-xs text-zinc-500">{o.customer_phone}</span></span>
+                  </div>
+                </td>
+                <td className="max-w-[260px] truncate px-4 py-3 text-zinc-300">{items(o)}</td>
+                <td className="px-4 py-3 text-right font-semibold">{taka(o.total)}</td>
+                <td className="px-4 py-3"><StatusBadge s={o.payment_status} /></td>
+                <td className="px-4 py-3"><StatusBadge s={o.status} /></td>
+                <td className="whitespace-nowrap px-4 py-3 text-xs text-zinc-500">{fmt(o.created_at)}</td>
               </tr>
             ))}
           </tbody>

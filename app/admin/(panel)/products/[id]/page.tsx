@@ -13,7 +13,7 @@ export default async function EditProduct(props: { params: Promise<{ id: string 
     <div className="max-w-3xl">
       <Link href="/admin/products" className="text-sm text-zinc-400 hover:text-white">← Products</Link>
       <div className="mb-6 mt-2 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{p.name}</h1>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{p.name}</h1>
         {p.is_active && <Link href={`/product/${p.slug}`} target="_blank" className="text-sm text-brand hover:underline">View in store ↗</Link>}
       </div>
       {searchParams.error && <p className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">{searchParams.error}</p>}

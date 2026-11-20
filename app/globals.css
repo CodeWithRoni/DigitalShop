@@ -38,3 +38,5 @@ body {
 
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }

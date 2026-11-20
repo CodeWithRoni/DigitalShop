@@ -2,7 +2,8 @@
 // Set DATABASE_URL to your Neon connection string (use the "Pooled connection" one).
 import { Pool, types } from 'pg';
 import type { Category, Order, OrderItem, Package, Product } from '@/lib/types';
-import type { DB, OrderFilter } from './types';
+import type { Analytics, Customer, DB, OrderFilter, PeriodTotals } from './types';
+import { lastDays } from './analytics';
 
 // Return NUMERIC as JS number (prices fit easily) and BIGINT ids as numbers.
 types.setTypeParser(1700, (v) => Number(v));
@@ -138,22 +139,98 @@ export const postgresDb: DB = {
     return o ? fixOrder(o) : null;
   },
   async listOrders(f: OrderFilter = {}) {
+    return (await postgresDb.listOrdersPage(f)).orders;
+  },
+  async listOrdersPage(f: OrderFilter = {}) {
     const where: string[] = [];
     const params: unknown[] = [];
-    if (f.status) { params.push(f.status); where.push(`o.status = $${params.length}`); }
-    if (f.payment) { params.push(f.payment); where.push(`o.payment_status = $${params.length}`); }
+    const add = (v: unknown) => { params.push(v); return `$${params.length}`; };
+    if (f.status) where.push(`o.status = ${add(f.status)}`);
+    if (f.payment) where.push(`o.payment_status = ${add(f.payment)}`);
+    if (f.phone) where.push(`o.customer_phone = ${add(f.phone)}`);
+    if (f.from) where.push(`(o.created_at at time zone 'Asia/Dhaka')::date >= ${add(f.from)}::date`);
+    if (f.to) where.push(`(o.created_at at time zone 'Asia/Dhaka')::date <= ${add(f.to)}::date`);
     const term = f.q?.trim();
     if (term) {
-      params.push(`%${term.replace(/[\\%_]/g, (m) => '\\' + m)}%`);
-      const n = params.length;
-      where.push(`(o.code ilike $${n} or o.customer_name ilike $${n} or o.customer_phone ilike $${n} or o.customer_email ilike $${n} or o.tran_id ilike $${n})`);
+      const n = add(`%${term.replace(/[\\%_]/g, (m) => '\\' + m)}%`);
+      where.push(`(o.code ilike ${n} or o.customer_name ilike ${n} or o.customer_phone ilike ${n} or o.customer_email ilike ${n} or o.tran_id ilike ${n})`);
     }
-    params.push(Math.min(f.limit || 200, 500));
-    const rows = await q<Order>(
-      `${ORDER_SELECT} ${where.length ? 'where ' + where.join(' and ') : ''} order by o.id desc limit $${params.length}`,
-      params,
-    );
-    return rows.map(fixOrder);
+    const w = where.length ? 'where ' + where.join(' and ') : '';
+    const countParams = [...params];
+    const limit = add(Math.min(f.limit || 200, 500));
+    const offset = add(Math.max(f.offset || 0, 0));
+    const [rows, cnt] = await Promise.all([
+      q<Order>(`${ORDER_SELECT} ${w} order by o.id desc limit ${limit} offset ${offset}`, params),
+      one<{ n: number }>(`select count(*)::int as n from orders o ${w}`, countParams),
+    ]);
+    return { orders: rows.map(fixOrder), total: cnt?.n || 0 };
+  },
+  async countByStatus() {
+    const rows = await q<{ status: string; n: number }>('select status, count(*)::int as n from orders group by status');
+    return Object.fromEntries(rows.map((r) => [r.status, r.n]));
+  },
+  async analytics(days) {
+    const cur = lastDays(days);
+    const prev = lastDays(days, days);
+    const D = `(created_at at time zone 'Asia/Dhaka')::date`;
+    const totalsSql = `select count(*)::int as orders,
+        count(*) filter (where payment_status = 'paid')::int as "paidOrders",
+        coalesce(sum(total) filter (where payment_status = 'paid'), 0)::float as revenue,
+        count(distinct customer_phone) filter (where payment_status = 'paid')::int as customers
+      from orders where ${D} between $1::date and $2::date`;
+    const fix = (t: Omit<PeriodTotals, 'aov'> | null): PeriodTotals => {
+      const v = t || { orders: 0, paidOrders: 0, revenue: 0, customers: 0 };
+      return { ...v, revenue: Number(v.revenue), aov: v.paidOrders ? Number(v.revenue) / v.paidOrders : 0 };
+    };
+    const [daily, c, p, st, top] = await Promise.all([
+      q<{ date: string; orders: number; paidOrders: number; revenue: number }>(
+        `select to_char(${D}, 'YYYY-MM-DD') as date, count(*)::int as orders,
+           count(*) filter (where payment_status = 'paid')::int as "paidOrders",
+           coalesce(sum(total) filter (where payment_status = 'paid'), 0)::float as revenue
+         from orders where ${D} between $1::date and $2::date group by 1`, [cur[0], cur[cur.length - 1]]),
+      one<Omit<PeriodTotals, 'aov'>>(totalsSql, [cur[0], cur[cur.length - 1]]),
+      one<Omit<PeriodTotals, 'aov'>>(totalsSql, [prev[0], prev[prev.length - 1]]),
+      q<{ status: string; n: number }>(`select status, count(*)::int as n from orders where ${D} between $1::date and $2::date group by status`, [cur[0], cur[cur.length - 1]]),
+      q<{ name: string; units: number; revenue: number }>(
+        `select i.product_name as name, sum(i.quantity)::int as units, sum(i.unit_price * i.quantity)::float as revenue
+         from order_items i join orders o on o.id = i.order_id
+         where o.payment_status = 'paid' and (o.created_at at time zone 'Asia/Dhaka')::date between $1::date and $2::date
+         group by i.product_name order by revenue desc limit 5`, [cur[0], cur[cur.length - 1]]),
+    ]);
+    const byDate = new Map(daily.map((d) => [d.date, d]));
+    const result: Analytics = {
+      days,
+      daily: cur.map((d) => {
+        const r = byDate.get(d);
+        return { date: d, orders: r?.orders || 0, paidOrders: r?.paidOrders || 0, revenue: Number(r?.revenue || 0) };
+      }),
+      current: fix(c), previous: fix(p),
+      statusCounts: Object.fromEntries(st.map((r) => [r.status, r.n])),
+      topProducts: top.map((t) => ({ ...t, revenue: Number(t.revenue) })),
+    };
+    return result;
+  },
+  async listCustomers(term) {
+    const params: unknown[] = [];
+    let having = '';
+    if (term?.trim()) {
+      params.push(`%${term.trim().replace(/[\\%_]/g, (m) => '\\' + m)}%`);
+      having = `having customer_phone ilike $1 or max(customer_name) ilike $1 or max(customer_email) ilike $1`;
+    }
+    const rows = await q<Customer>(
+      `select customer_phone as phone,
+         (array_agg(customer_name order by id desc))[1] as name,
+         (array_agg(customer_email order by id desc) filter (where customer_email is not null))[1] as email,
+         count(*)::int as orders,
+         count(*) filter (where payment_status = 'paid')::int as "paidOrders",
+         coalesce(sum(total) filter (where payment_status = 'paid'), 0)::float as spent,
+         min(created_at) as "firstOrder", max(created_at) as "lastOrder"
+       from orders group by customer_phone ${having}
+       order by spent desc, "lastOrder" desc limit 500`, params);
+    return rows.map((r) => ({
+      ...r, spent: Number(r.spent),
+      firstOrder: new Date(r.firstOrder).toISOString(), lastOrder: new Date(r.lastOrder).toISOString(),
+    }));
   },
   async updateOrder(id, patch) {
     const s = setClause(patch as Record<string, unknown>, ORDER_COLS, 2);

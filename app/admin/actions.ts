@@ -54,6 +54,17 @@ export async function updateOrder(fd: FormData) {
 }
 
 
+export async function setOrderStatus(fd: FormData) {
+  await requireAdmin();
+  const id = Number(fd.get('id'));
+  const status = str(fd, 'status') as OrderStatus;
+  if (!ORDER_STATUSES.includes(status)) return;
+  await db.updateOrder(id, { status });
+  revalidatePath(`/admin/orders/${id}`);
+  revalidatePath('/admin');
+  redirect(`/admin/orders/${id}?saved=1`);
+}
+
 export async function saveProduct(fd: FormData) {
   await requireAdmin();
   const id = Number(fd.get('id')) || undefined;

@@ -1,86 +1,157 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
-import { updateOrder } from '../../../actions';
+import { setOrderStatus, updateOrder } from '../../../actions';
 import StatusBadge from '@/components/StatusBadge';
-import { taka } from '@/lib/utils';
+import CopyButton from '@/components/admin/CopyButton';
+import Icon from '@/components/admin/Icon';
+import { Panel } from '@/components/admin/ui';
+import { SITE_URL, taka } from '@/lib/utils';
+
+const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
 
 export default async function OrderDetail(props: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> }) {
   const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const o = await db.getOrderById(Number(params.id));
   if (!o) notFound();
-  const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka' }) : '—');
-  const wa = `https://wa.me/88${o.customer_phone}?text=${encodeURIComponent(`Hi ${o.customer_name}, your order ${o.code} `)}`;
+  const history = await db.listOrdersPage({ phone: o.customer_phone, limit: 1 });
+  const paid = o.payment_status === 'paid';
+
+  const waBase = `https://wa.me/88${o.customer_phone}?text=`;
+  const deliveryText = [
+    `Hi ${o.customer_name}, your order ${o.code} is delivered ✅`,
+    ...(o.order_items || []).map((i) => `• ${i.product_name} — ${i.package_name}`),
+    o.delivery_message ? `\n${o.delivery_message}` : '',
+    `\nOrder details: ${SITE_URL}/order/${o.code}`,
+    'Thank you for shopping with us!',
+  ].join('\n');
+
+  const timeline = [
+    { label: 'Order placed', at: o.created_at, done: true },
+    { label: paid ? `Payment received${o.payment_method ? ` · ${o.payment_method}` : ''}` : o.payment_status === 'failed' ? 'Payment failed' : 'Awaiting payment', at: o.paid_at, done: paid, bad: o.payment_status === 'failed' },
+    { label: o.status === 'delivered' ? 'Delivered' : o.status === 'cancelled' ? 'Cancelled' : o.status === 'refunded' ? 'Refunded' : 'Delivery', at: ['delivered', 'cancelled', 'refunded'].includes(o.status) ? o.updated_at : null, done: o.status === 'delivered', bad: ['cancelled', 'refunded'].includes(o.status) },
+  ];
 
   return (
-    <div className="max-w-5xl">
-      <Link href="/admin/orders" className="text-sm text-zinc-400 hover:text-white">← Orders</Link>
-      <div className="mb-6 mt-2 flex flex-wrap items-center gap-3">
-        <h1 className="font-mono text-2xl font-bold">{o.code}</h1>
-        <StatusBadge s={o.payment_status} /><StatusBadge s={o.status} />
+    <div>
+      <Link href="/admin/orders" className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-white">← Orders</Link>
+      <div className="mb-6 mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-mono text-2xl font-bold">{o.code}</h1><CopyButton text={o.code} />
+          <StatusBadge s={o.payment_status} /><StatusBadge s={o.status} />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {paid && o.status === 'pending' && <QuickStatus id={o.id} status="processing" label="Start processing" />}
+          {paid && ['pending', 'processing'].includes(o.status) && <QuickStatus id={o.id} status="delivered" label="Mark delivered" primary />}
+          <a href={waBase + encodeURIComponent(o.status === 'delivered' ? deliveryText : `Hi ${o.customer_name}, about your order ${o.code}: `)} target="_blank" rel="noreferrer" className="btn-ghost !py-2"><Icon name="whatsapp" size={16} className="text-green-400" />WhatsApp</a>
+        </div>
       </div>
-      {searchParams.saved && <div className="mb-5 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200">Saved ✓</div>}
+      {searchParams.saved && <div className="mb-5 flex items-center gap-2 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200"><Icon name="check" size={16} />Saved</div>}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
-          <div className="card divide-y divide-line">
-            {o.order_items?.map((i) => (
-              <div key={i.id} className="flex justify-between gap-4 p-4 text-sm">
-                <div>
-                  <div className="font-semibold">{i.product_name} — {i.package_name} × {i.quantity}</div>
-                  <div className="mt-1 rounded bg-black/30 px-2 py-1 font-mono text-xs text-zinc-300">{i.delivery_info}</div>
-                </div>
-                <div className="font-semibold">{taka(i.unit_price * i.quantity)}</div>
-              </div>
-            ))}
-            <div className="flex justify-between p-4 font-bold"><span>Total</span><span className="text-brand">{taka(o.total)}</span></div>
-          </div>
+          <Panel title={`Items (${o.order_items?.length || 0})`}>
+            <ul className="divide-y divide-white/[0.06]">
+              {o.order_items?.map((i) => (
+                <li key={i.id} className="flex justify-between gap-4 px-5 py-4 text-sm">
+                  <div className="min-w-0">
+                    <div className="font-semibold">{i.product_name} <span className="font-normal text-zinc-400">— {i.package_name} × {i.quantity}</span></div>
+                    <div className="mt-2 flex items-center gap-1 rounded-lg border border-white/[0.06] bg-black/30 py-1 pl-2.5 pr-1 font-mono text-xs text-zinc-200">
+                      <span className="flex-1 break-all">{i.delivery_info}</span><CopyButton text={i.delivery_info || ''} />
+                    </div>
+                  </div>
+                  <div className="shrink-0 font-semibold">{taka(i.unit_price * i.quantity)}</div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-between border-t border-white/[0.06] bg-white/[0.02] px-5 py-4 font-bold"><span>Total</span><span className="text-gradient">{taka(o.total)}</span></div>
+          </Panel>
 
-          <form action={updateOrder} className="card space-y-4 p-5">
-            <input type="hidden" name="id" value={o.id} />
-            <h2 className="font-semibold">Update order</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div><label className="label">Order status</label>
-                <select name="status" defaultValue={o.status} className="input">
-                  {['pending', 'processing', 'delivered', 'cancelled', 'refunded'].map((s) => <option key={s} value={s}>{s}</option>)}
-                </select></div>
-              <div><label className="label">Payment status</label>
-                <select name="payment_status" defaultValue={o.payment_status} className="input">
-                  {['unpaid', 'paid', 'failed', 'refunded'].map((s) => <option key={s} value={s}>{s}</option>)}
-                </select></div>
-            </div>
-            <div><label className="label">Delivery message (customer sees this on the order page)</label>
-              <textarea name="delivery_message" defaultValue={o.delivery_message || ''} rows={4} className="input font-mono" placeholder={'e.g.\nEmail: xxx@gmail.com\nPassword: ****\nProfile: 2'} /></div>
-            <div><label className="label">Internal note (only admins)</label>
-              <textarea name="admin_note" defaultValue={o.admin_note || ''} rows={2} className="input" /></div>
-            <div className="flex gap-3"><button className="btn-primary">Save changes</button></div>
-          </form>
+          <Panel title="Deliver & update">
+            <form action={updateOrder} className="space-y-4 p-5">
+              <input type="hidden" name="id" value={o.id} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div><label className="label">Order status</label>
+                  <select name="status" defaultValue={o.status} className="input">
+                    {['pending', 'processing', 'delivered', 'cancelled', 'refunded'].map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select></div>
+                <div><label className="label">Payment status</label>
+                  <select name="payment_status" defaultValue={o.payment_status} className="input">
+                    {['unpaid', 'paid', 'failed', 'refunded'].map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select></div>
+              </div>
+              <div><label className="label">Delivery message — the customer sees this on their order page</label>
+                <textarea name="delivery_message" defaultValue={o.delivery_message || ''} rows={5} className="input font-mono" placeholder={'Email: xxx@gmail.com\nPassword: ********\nProfile: 2  ·  PIN: 1234'} /></div>
+              <div><label className="label">Internal note — only admins see this</label>
+                <textarea name="admin_note" defaultValue={o.admin_note || ''} rows={2} className="input" /></div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button className="btn-primary">Save changes</button>
+                <span className="text-xs text-zinc-500">Tip: add the delivery message, set status to <b className="text-zinc-300">delivered</b>, save, then press WhatsApp to send it.</span>
+              </div>
+            </form>
+          </Panel>
         </div>
 
         <div className="space-y-6">
-          <div className="card space-y-2 p-5 text-sm">
-            <h2 className="mb-2 font-semibold">Customer</h2>
-            <Row k="Name" v={o.customer_name} />
-            <Row k="Phone" v={o.customer_phone} />
-            <Row k="Email" v={o.customer_email || '—'} />
-            {o.note && <div className="rounded-lg bg-black/30 p-2 text-xs text-zinc-300">Note: {o.note}</div>}
-            <a href={wa} target="_blank" rel="noreferrer" className="btn-ghost mt-2 w-full !py-2">Message on WhatsApp</a>
-          </div>
-          <div className="card space-y-2 p-5 text-sm">
-            <h2 className="mb-2 font-semibold">Payment</h2>
-            <Row k="Method" v={o.payment_method || '—'} />
-            <Row k="Tran ID" v={o.tran_id || '—'} mono />
-            <Row k="Val ID" v={o.val_id || '—'} mono />
-            <Row k="Bank Tran" v={o.bank_tran_id || '—'} mono />
-            <Row k="Paid at" v={fmt(o.paid_at)} />
-            <Row k="Created" v={fmt(o.created_at)} />
-            <Row k="Updated" v={fmt(o.updated_at)} />
-          </div>
+          <Panel title="Timeline">
+            <ol className="relative space-y-5 p-5">
+              <span className="absolute bottom-8 left-[29px] top-8 w-px bg-white/10" />
+              {timeline.map((t) => (
+                <li key={t.label} className="relative flex gap-3">
+                  <span className={`relative z-10 grid h-5 w-5 shrink-0 place-items-center rounded-full ${t.bad ? 'bg-red-500/80' : t.done ? 'bg-gradient-to-br from-brand to-accent-dark' : 'border border-white/15 bg-bg'}`}>
+                    {t.done && <Icon name="check" size={11} />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className={`block text-sm ${t.done || t.bad ? 'font-medium' : 'text-zinc-500'}`}>{t.label}</span>
+                    <span className="block text-xs text-zinc-500">{t.at ? fmt(t.at) : 'Waiting'}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </Panel>
+
+          <Panel title="Customer" action={history.total > 1 ? <Link href={`/admin/orders?phone=${o.customer_phone}`} className="text-xs font-semibold text-brand-light hover:underline">{history.total} orders →</Link> : <span className="text-xs text-zinc-500">First order</span>}>
+            <div className="space-y-2.5 p-5 text-sm">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand/40 to-accent-dark/40 text-sm font-bold uppercase">{o.customer_name.slice(0, 2)}</span>
+                <span className="font-semibold">{o.customer_name}</span>
+              </div>
+              <Row k="Phone" v={o.customer_phone} copy />
+              <Row k="Email" v={o.customer_email || '—'} copy={!!o.customer_email} />
+              {o.note && <div className="rounded-lg bg-black/30 p-2.5 text-xs text-zinc-300"><span className="text-zinc-500">Customer note:</span> {o.note}</div>}
+            </div>
+          </Panel>
+
+          <Panel title="Payment">
+            <div className="space-y-2.5 p-5 text-sm">
+              <Row k="Method" v={o.payment_method || '—'} />
+              <Row k="Tran ID" v={o.tran_id || '—'} mono copy={!!o.tran_id} />
+              <Row k="Bank Tran" v={o.bank_tran_id || '—'} mono copy={!!o.bank_tran_id} />
+              <Row k="Val ID" v={o.val_id || '—'} mono />
+              <Row k="Paid at" v={fmt(o.paid_at)} />
+              <Row k="Updated" v={fmt(o.updated_at)} />
+            </div>
+          </Panel>
+          {o.admin_note && <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4 text-sm text-yellow-100"><div className="mb-1 text-xs font-semibold uppercase text-yellow-400">Internal note</div>{o.admin_note}</div>}
         </div>
       </div>
     </div>
   );
 }
-function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
-  return <div className="flex justify-between gap-3"><span className="text-zinc-500">{k}</span><span className={`truncate text-right ${mono ? 'font-mono text-xs' : ''}`}>{v}</span></div>;
+
+function QuickStatus({ id, status, label, primary }: { id: number; status: string; label: string; primary?: boolean }) {
+  return (
+    <form action={setOrderStatus}>
+      <input type="hidden" name="id" value={id} /><input type="hidden" name="status" value={status} />
+      <button className={primary ? 'btn-primary !py-2' : 'btn-ghost !py-2'}>{primary && <Icon name="check" size={16} />}{label}</button>
+    </form>
+  );
+}
+function Row({ k, v, mono, copy }: { k: string; v: string; mono?: boolean; copy?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-zinc-500">{k}</span>
+      <span className={`flex min-w-0 items-center gap-1 ${mono ? 'font-mono text-xs' : ''}`}><span className="truncate">{v}</span>{copy && <CopyButton text={v} />}</span>
+    </div>
+  );
 }
