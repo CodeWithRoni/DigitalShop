@@ -25,3 +25,11 @@ export type CartItem = {
   slug: string; image: string | null; price: number; quantity: number;
   deliveryLabel: string; deliveryInfo: string;
 };
+
+export type ProductPayload = {
+  id?: number; name: string; slug?: string; category_id: number | null;
+  short_description?: string; description?: string; image_url?: string;
+  delivery_label?: string; delivery_hint?: string;
+  is_active: boolean; is_featured: boolean; sort_order?: number;
+  packages: { id?: number; name: string; price: number | string; is_active: boolean }[];
+};

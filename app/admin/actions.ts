@@ -7,7 +7,7 @@ import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin';
 import { ADMIN_COOKIE, checkCredentials, cookieOptions, createSessionToken } from '@/lib/auth';
 import { rateLimit } from '@/lib/rateLimit';
-import type { OrderStatus, PaymentStatus } from '@/lib/types';
+import type { OrderStatus, PaymentStatus, ProductPayload } from '@/lib/types';
 
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -89,6 +89,49 @@ export async function saveProduct(fd: FormData) {
     redirect(`/admin/products/${id ?? 'new'}?error=${encodeURIComponent((e as Error).message)}`);
   }
   revalidatePath('/admin/products');
+  redirect(`/admin/products/${saved.id}?saved=1`);
+}
+
+/** Saves a product and all of its packages from the product editor in one go. */
+export async function saveProductFull(_: unknown, fd: FormData): Promise<{ error?: string }> {
+  await requireAdmin();
+  let d: ProductPayload;
+  try { d = JSON.parse(String(fd.get('data') || '')); } catch { return { error: 'Invalid form data' }; }
+  const name = (d.name || '').trim().slice(0, 120);
+  const slug = slugify((d.slug || '').trim() || name);
+  if (!name || !slug) return { error: 'Product name is required' };
+  const pkgs = (d.packages || [])
+    .map((k, i) => ({ id: Number(k.id) || undefined, name: String(k.name || '').trim().slice(0, 120), price: Number(k.price), is_active: !!k.is_active, sort_order: i }))
+    .filter((k) => k.name || k.id);
+  for (const k of pkgs) {
+    if (!k.name) return { error: 'Every package needs a name' };
+    if (!Number.isFinite(k.price) || k.price < 0) return { error: `Enter a valid price for "${k.name}"` };
+  }
+  let saved;
+  try {
+    saved = await db.saveProduct({
+      id: Number(d.id) || undefined, name, slug,
+      category_id: Number(d.category_id) || null,
+      short_description: d.short_description?.trim() || null,
+      description: d.description?.trim() || null,
+      image_url: d.image_url?.trim() || null,
+      delivery_label: d.delivery_label?.trim() || 'Email / Account info',
+      delivery_hint: d.delivery_hint?.trim() || null,
+      is_active: !!d.is_active, is_featured: !!d.is_featured,
+      sort_order: Number(d.sort_order) || 0,
+    });
+    const existing = d.id ? (await db.getProductById(saved.id))?.packages || [] : [];
+    const keep = new Set(pkgs.filter((k) => k.id).map((k) => k.id));
+    for (const old of existing) if (!keep.has(old.id)) await db.deletePackage(old.id);
+    for (const k of pkgs) {
+      const own = !k.id || existing.some((e) => e.id === k.id);
+      if (own) await db.savePackage({ ...k, id: k.id, product_id: saved.id });
+    }
+  } catch (e) {
+    return { error: (e as Error).message === 'Slug already used' ? 'Another product already uses this URL slug — change the name or slug.' : (e as Error).message };
+  }
+  revalidatePath('/admin/products');
+  revalidatePath(`/admin/products/${saved.id}`);
   redirect(`/admin/products/${saved.id}?saved=1`);
 }
 
