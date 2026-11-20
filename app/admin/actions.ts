@@ -92,6 +92,7 @@ export async function toggleProduct(fd: FormData) {
 export async function deleteProduct(fd: FormData) {
   await requireAdmin();
   await db.deleteProduct(Number(fd.get('id')));
+  revalidatePath('/admin/products');
   redirect('/admin/products');
 }
 

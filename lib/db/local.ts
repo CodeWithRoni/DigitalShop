@@ -1,5 +1,5 @@
 // Local JSON-file storage — for development / demo without a database.
-// NOTE: does not work on serverless hosts with read-only disks (e.g. Vercel). Use Supabase there.
+// NOTE: does not work on serverless hosts with read-only disks (e.g. Vercel). Use Neon (DATABASE_URL) there.
 import { promises as fs } from 'fs';
 import path from 'path';
 import seed from '@/data/seed.json';

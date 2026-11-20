@@ -1,4 +1,5 @@
--- DigitalShop schema. Run once in Supabase SQL Editor (or via migration).
+-- DigitalShop schema (PostgreSQL / Neon).
+-- Run once: Neon Console -> SQL Editor -> paste & Run. Safe to re-run.
 
 -- ===== Tables =====
 create table if not exists public.categories (
@@ -91,12 +92,3 @@ create trigger products_touch before update on public.products
 drop trigger if exists orders_touch on public.orders;
 create trigger orders_touch before update on public.orders
   for each row execute function public.touch_updated_at();
-
--- ===== RLS =====
--- All reads/writes go through the Next.js server using the service-role key,
--- so RLS is enabled with NO policies: anon/browser clients can access nothing.
-alter table public.categories enable row level security;
-alter table public.products enable row level security;
-alter table public.packages enable row level security;
-alter table public.orders enable row level security;
-alter table public.order_items enable row level security;

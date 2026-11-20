@@ -1,4 +1,4 @@
--- Demo catalogue
+-- Optional demo products. Run after schema.sql.
 insert into public.categories (slug,name,description,sort_order) values ('streaming','Streaming','Movies, series, music and video streaming subscriptions.',0) on conflict (slug) do nothing;
 insert into public.products (category_id,slug,name,short_description,image_url,delivery_label,sort_order,is_featured) select id,'netflix','Netflix','Buy Netflix in Bangladesh at the best BDT price with bKash / Nagad / card payment and fast delivery.','https://www.google.com/s2/favicons?domain=netflix.com&sz=128','Email for account delivery',0,true from public.categories where slug='streaming' on conflict (slug) do nothing;
 insert into public.packages (product_id,name,price,sort_order) select p.id, v.name, v.price, v.sort from public.products p, (values ('1 Screen — 1 Month',350,0),('2 Screen — 1 Month',700,1),('4 Screen — 1 Month',1400,2),('1 Screen — 6 Months',2100,3)) as v(name,price,sort) where p.slug='netflix' and not exists (select 1 from public.packages x where x.product_id=p.id);

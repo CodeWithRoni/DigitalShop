@@ -1,7 +1,7 @@
 # DigitalShop — Digital subscription & top-up store (Bangladesh)
 
 Storefront + Admin Panel + SSLCommerz payment (bKash, Nagad, Rocket, card).
-Built with **Next.js 14 (App Router) + Tailwind CSS**. Database: **Supabase (optional)**.
+Built with **Next.js 14 (App Router) + Tailwind CSS**. Database: **Neon (PostgreSQL)** — or a local demo file for testing.
 
 ## Ki ki ache
 
@@ -30,7 +30,7 @@ Built with **Next.js 14 (App Router) + Tailwind CSS**. Database: **Supabase (opt
 
 ```bash
 npm install
-cp .env.example .env.local     # Supabase line gulo khali rakhun
+cp .env.example .env.local     # DATABASE_URL khali rakhle local demo file use hobe
 npm run dev
 ```
 - Store: http://localhost:3000
@@ -38,13 +38,17 @@ npm run dev
 - Data `data/local-db.json` file-e save hoy (prothom bar `data/seed.json` theke demo product ase).
   Reset korte file-ta delete korun.
 
-## Pore Supabase jog kora (kono code change lagbe na)
-1. Supabase-e project banan → SQL Editor-e `supabase/schema.sql` chalan, tarpor `supabase/seed.sql` (demo product chaile)
-2. `.env.local`-e `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` din
-3. Restart → admin sidebar-e "Storage: Supabase" dekhabe
+## Neon database setup
+1. https://neon.tech -e account khulun → **New Project** (Region: **Singapore** — Bangladesh-er kachakachi)
+2. Project-er **SQL Editor** khulun → `database/schema.sql` er pura lekha paste kore **Run**
+3. Demo product chaile `database/seed.sql` o Run korun (na chaile Admin Panel theke nijer product add korun)
+4. **Connect** button → **Pooled connection** on kore connection string copy korun, eta dekhte emon:
+   `postgresql://user:pass@ep-xxxx-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
+5. `.env.local` (ar Vercel → Settings → Environment Variables)-e boshan: `DATABASE_URL=...`
+6. Restart → Admin sidebar-e "Storage: Neon (Postgres)" dekhabe
 
-Sob table-e RLS on, kono policy nei — mane browser theke keu sorasori database dhorte parbe na;
-sob kaj server (service-role key) diye hoy.
+`schema.sql` abar chalaleo kono data muche jabe na (sob `if not exists`).
+Database password kokhono GitHub-e push korben na — sudhu `.env.local` / Vercel env-e rakhun.
 
 ## SSLCommerz setup
 1. Sandbox account: https://developer.sslcommerz.com/registration/
@@ -54,7 +58,7 @@ sob kaj server (service-role key) diye hoy.
 5. Live hole `SSLCZ_IS_LIVE=true` ar live store ID/password.
 
 ## Deploy (Vercel)
-- **Vercel-e local JSON file kaj kore na** (read-only disk) — tai deploy-er age Supabase lagbe.
+- **Vercel-e local JSON file kaj kore na** (read-only disk) — tai deploy-er age `DATABASE_URL` (Neon) din.
   VPS (`npm run build && npm start`)-e local file cholbe, kintu backup rakhun.
 - Production-e must: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `AUTH_SECRET` (32+ character random).
 
@@ -72,7 +76,7 @@ sob kaj server (service-role key) diye hoy.
 app/(shop)/        customer pages
 app/admin/         admin panel (+ actions.ts = sob admin kaj)
 app/api/           checkout, payment callbacks, track, repay
-lib/db/            storage: local.ts (JSON) / supabase.ts — same interface
+lib/db/            storage: local.ts (JSON demo) / postgres.ts (Neon) — same interface
 lib/sslcommerz.ts  gateway; lib/payment.ts verify logic
-supabase/          schema.sql, seed.sql
+database/          schema.sql, seed.sql (Neon SQL Editor-e chalan)
 ```

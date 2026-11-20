@@ -1,8 +1,8 @@
 import 'server-only';
 import type { DB } from './types';
 import { localDb } from './local';
-import { supabaseDb } from './supabase';
+import { postgresDb } from './postgres';
 
-/** Uses Supabase when its keys are set, otherwise the local JSON file. */
-export const usingSupabase = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-export const db: DB = usingSupabase ? supabaseDb : localDb;
+/** Uses Neon/Postgres when DATABASE_URL is set, otherwise the local JSON demo file. */
+export const usingDatabase = !!process.env.DATABASE_URL;
+export const db: DB = usingDatabase ? postgresDb : localDb;
