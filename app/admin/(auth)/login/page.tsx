@@ -1,5 +1,6 @@
 'use client';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { login } from '../../actions';
 import Logo from '@/components/Logo';
 
@@ -9,7 +10,7 @@ function Submit() {
 }
 
 export default function Login() {
-  const [state, action] = useFormState(login, null as { error?: string } | null);
+  const [state, action] = useActionState(login, null as { error?: string } | null);
   return (
     <div className="grid min-h-screen place-items-center p-6">
       <form action={action} className="card w-full max-w-sm space-y-4 p-7">

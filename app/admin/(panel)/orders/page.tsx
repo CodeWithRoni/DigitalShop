@@ -4,8 +4,8 @@ import OrdersTable from '@/components/OrdersTable';
 
 const TABS = [['', 'All'], ['pending', 'Pending'], ['processing', 'Processing'], ['delivered', 'Delivered'], ['cancelled', 'Cancelled'], ['refunded', 'Refunded']];
 
-export default async function Orders({ searchParams }: { searchParams: { status?: string; payment?: string; q?: string } }) {
-  const { status = '', payment = '', q = '' } = searchParams;
+export default async function Orders(props: { searchParams: Promise<{ status?: string; payment?: string; q?: string }> }) {
+  const { status = '', payment = '', q = '' } = await props.searchParams;
   const orders = await db.listOrders({ status: status || undefined, payment: payment || undefined, q: q || undefined });
   const qs = (s: string) => '?' + new URLSearchParams({ ...(s && { status: s }), ...(payment && { payment }), ...(q && { q }) }).toString();
   return (

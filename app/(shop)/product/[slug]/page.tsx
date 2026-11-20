@@ -7,13 +7,13 @@ import { minPrice, taka } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const p = await db.getProductBySlug(params.slug);
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {
+  const p = await db.getProductBySlug((await props.params).slug);
   return p ? { title: `${p.name} Price in Bangladesh`, description: p.short_description || undefined } : {};
 }
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const product = await db.getProductBySlug(params.slug);
+export default async function ProductPage(props: { params: Promise<{ slug: string }> }) {
+  const product = await db.getProductBySlug((await props.params).slug);
   if (!product) notFound();
   const all = await db.listProducts();
   const related = all.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 6);

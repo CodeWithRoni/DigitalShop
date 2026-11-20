@@ -4,7 +4,8 @@ import { toggleProduct } from '../../actions';
 import ProductIcon from '@/components/ProductIcon';
 import { minPrice, taka } from '@/lib/utils';
 
-export default async function Products({ searchParams }: { searchParams: { q?: string } }) {
+export default async function Products(props: { searchParams: Promise<{ q?: string }> }) {
+  const searchParams = await props.searchParams;
   const [products, cats] = await Promise.all([db.listProducts({ includeInactive: true }), db.listCategories()]);
   const q = (searchParams.q || '').toLowerCase();
   const list = products.filter((p) => !q || p.name.toLowerCase().includes(q));

@@ -8,7 +8,7 @@ const COOKIE = 'ds_view';
 const MAX = 20;
 
 async function read(): Promise<string[]> {
-  const raw = cookies().get(COOKIE)?.value;
+  const raw = (await cookies()).get(COOKIE)?.value;
   if (!raw) return [];
   const [list, sig] = raw.split('.');
   if (!list || !sig || sig !== (await hmac('view:' + list))) return [];

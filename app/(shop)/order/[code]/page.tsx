@@ -11,7 +11,8 @@ export const metadata = { title: 'Order status', robots: { index: false } };
 
 const STEPS = ['pending', 'processing', 'delivered'] as const;
 
-export default async function OrderPage({ params, searchParams }: { params: { code: string }; searchParams: { payment?: string } }) {
+export default async function OrderPage(props: { params: Promise<{ code: string }>; searchParams: Promise<{ payment?: string }> }) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const code = decodeURIComponent(params.code).toUpperCase();
   if (!(await canView(code))) redirect(`/track?code=${encodeURIComponent(code)}`);
   const order = await db.getOrderByCode(code);

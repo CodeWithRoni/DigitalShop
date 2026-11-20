@@ -5,7 +5,8 @@ import ProductForm from '@/components/ProductForm';
 import ConfirmButton from '@/components/ConfirmButton';
 import { deletePackage, deleteProduct, savePackage } from '../../../actions';
 
-export default async function EditProduct({ params, searchParams }: { params: { id: string }; searchParams: { error?: string; saved?: string } }) {
+export default async function EditProduct(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; saved?: string }> }) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const [p, cats] = await Promise.all([db.getProductById(Number(params.id)), db.listCategories()]);
   if (!p) notFound();
   return (

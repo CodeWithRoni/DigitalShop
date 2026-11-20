@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import ProductForm from '@/components/ProductForm';
 
-export default async function NewProduct({ searchParams }: { searchParams: { error?: string } }) {
+export default async function NewProduct(props: { searchParams: Promise<{ error?: string }> }) {
+  const searchParams = await props.searchParams;
   const cats = await db.listCategories();
   return (
     <div className="max-w-3xl">

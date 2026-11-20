@@ -8,9 +8,9 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Demo payment', robots: { index: false } };
 
 // Stand-in for the SSLCommerz page while the gateway keys are not configured.
-export default async function DemoPay({ params }: { params: { code: string } }) {
+export default async function DemoPay(props: { params: Promise<{ code: string }> }) {
   if (!demoPaymentEnabled) notFound();
-  const code = decodeURIComponent(params.code);
+  const code = decodeURIComponent((await props.params).code);
   if (!(await canView(code))) notFound();
   const order = await db.getOrderByCode(code);
   if (!order) notFound();

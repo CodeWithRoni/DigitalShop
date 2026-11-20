@@ -2,7 +2,8 @@ import { db } from '@/lib/db';
 import { deleteCategory, saveCategory } from '../../actions';
 import ConfirmButton from '@/components/ConfirmButton';
 
-export default async function Categories({ searchParams }: { searchParams: { error?: string } }) {
+export default async function Categories(props: { searchParams: Promise<{ error?: string }> }) {
+  const searchParams = await props.searchParams;
   const [cats, products] = await Promise.all([db.listCategories(), db.listProducts({ includeInactive: true })]);
   return (
     <div className="max-w-4xl">

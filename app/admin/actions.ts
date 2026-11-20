@@ -13,16 +13,16 @@ const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 export async function login(_: unknown, fd: FormData) {
-  const ip = (headers().get('x-forwarded-for') || 'local').split(',')[0];
+  const ip = ((await headers()).get('x-forwarded-for') || 'local').split(',')[0];
   if (!rateLimit('login:' + ip, 8, 15 * 60_000)) return { error: 'Too many attempts. Try again in 15 minutes.' };
   const email = str(fd, 'email'); const password = String(fd.get('password') || '');
   if (!(await checkCredentials(email, password))) return { error: 'Wrong email or password' };
-  cookies().set(ADMIN_COOKIE, await createSessionToken(email.toLowerCase()), cookieOptions);
+  (await cookies()).set(ADMIN_COOKIE, await createSessionToken(email.toLowerCase()), cookieOptions);
   redirect('/admin');
 }
 
 export async function logout() {
-  cookies().delete(ADMIN_COOKIE);
+  (await cookies()).delete(ADMIN_COOKIE);
   redirect('/admin/login');
 }
 

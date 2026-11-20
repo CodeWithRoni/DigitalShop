@@ -5,7 +5,8 @@ import { updateOrder } from '../../../actions';
 import StatusBadge from '@/components/StatusBadge';
 import { taka } from '@/lib/utils';
 
-export default async function OrderDetail({ params, searchParams }: { params: { id: string }; searchParams: { saved?: string } }) {
+export default async function OrderDetail(props: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> }) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams]);
   const o = await db.getOrderById(Number(params.id));
   if (!o) notFound();
   const fmt = (d: string | null) => (d ? new Date(d).toLocaleString('en-GB', { timeZone: 'Asia/Dhaka' }) : '—');
